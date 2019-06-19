@@ -21,7 +21,7 @@ library(tidyverse)
 library(reshape2)
 library(srvyr)
 # import
-dat <- readRDS("~/nsfg_analysis/data/alters_egos.rds")
+#dat <- readRDS("~/nsfg_analysis/data/alters_egos.rds")
 
 ## limit to active partnerships 
 dat <- dat %>% filter(active==1)

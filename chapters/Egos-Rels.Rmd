@@ -1,7 +1,7 @@
 # Egos - Partnerships {#subset}
 
 ```{r load-altersedgelist, echo=FALSE}
-dat <- readRDS("../data/alters_egos.rds")
+dat <- readRDS("~/NSFG_DATA/objects/alters_egos.rds")
 datsvy <- as_survey_design(dat, weights = e.weight, ids = ego)
 ```
 ## Active Vars

@@ -1,6 +1,7 @@
 # Degree {#deg}
 
-```{r deg-active, echo=FALSE}
+in progress 
+```{r deg-active, echo=FALSE, eval=FALSE}
 
 deg <- svy %>% 
           mutate(deg.cap = ifelse(deg.main > 2, 2, deg.main)) %>%

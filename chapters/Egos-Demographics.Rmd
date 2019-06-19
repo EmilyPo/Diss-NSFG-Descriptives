@@ -1,7 +1,7 @@
 # Egos 
 
 ```{r full-data, echo=FALSE}
-nsfg <- readRDS("~/nsfg_analysis/data/nsfg_complete.rds")
+nsfg <- readRDS("~/NSFG_DATA/Full/nsfg_complete.rds")
 
 svy <- as_survey_design(nsfg, weights = weight, ids = CASEID)
 ```
