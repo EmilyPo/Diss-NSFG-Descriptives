@@ -1,0 +1,446 @@
+--- 
+title: "NSFG: Initial Descriptives"
+author: "Emily Pollock"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+#bibliography: [book.bib, packages.bib]
+#biblio-style: apalike
+#link-citations: yes
+description: "Initial NSFG Descriptives for 15-29-year-old Heterosexuals"
+
+---
+
+# Preface
+
+```{r load-packages, include=FALSE}
+library(here)
+library(tidyverse)
+library(plotly)
+library(srvyr)
+library(reshape2)
+library(kableExtra)
+library(scales)
+library(DataCombine)
+library(DT)
+```
+
+This book contains the NSFG data descriptives for 2006-2015 as it relates to the sexual partnership patterns of 15-44 year olds. 
+
+This is to get a sense of the dataset before conducting further analysis. What does the data look like, what is missing, etc. 
+
+Raw and weighted plots are displayed.  
+
+
+
+
+<!--chapter:end:index.Rmd-->
+
+# Egos 
+
+```{r full-data, echo=FALSE}
+nsfg <- readRDS("~/nsfg_analysis/data/nsfg_complete.rds")
+
+svy <- as_survey_design(nsfg, weights = weight, ids = CASEID)
+```
+
+The full dataset from 2006-2015 includes data from `r nsfg %>% count()` respondents. What follows are some basic unweighted & weighted demographic descriptives for respondents as well as other of sexual partnership variables of interest. 
+
+
+## Sex 
+no NAs
+```{r full-sex, echo=FALSE}
+sex <- nsfg %>% count(sex)
+
+p <- sex %>% 
+  plot_ly(x= ~sex, y= ~n, type='bar', name="raw", color = I("indianred3")) %>%
+  layout(yaxis = list(title="", barmode='group'), 
+         xaxis = list(title=""),
+         title = "Counts - Raw Data")
+
+
+sex_w <- svy %>% group_by(sex) %>% summarize(count = survey_total(vartype="ci"))
+p2 <- sex_w %>% plot_ly(x=~sex, y=~count, type="bar", name="weighted", color = I("indianred4"),
+                        error_y=list(type="data",
+                           symmetric=FALSE,
+                           array=c(sex_w$count_upp-sex_w$count),
+                           arrayminus=c(sex_w$count-sex_w$count_low),
+                           color="grey90")) %>% 
+         layout(yaxis = list(title="", barmode='group'), 
+         xaxis = list(title=""), 
+         title = "Counts")
+
+subplot(p,p2)
+```
+
+## Age 
+No NAs
+```{r full-age, echo=FALSE}
+ageF <- nsfg %>% filter(sex %in% "F") %>% count(age)
+ageM <- nsfg %>% filter(sex %in% "M") %>% count(age)
+age <- cbind(ageF, ageM[,2])
+colnames(age)[2:3] <- c("Females", "Males") 
+
+p <- age %>% 
+  plot_ly(x= ~age, y= ~Females, type='bar', name="Females") %>%
+  add_trace(x=~age, y=~Males, name="Males") %>%
+  layout(yaxis = list(title="", barmode='group'), 
+         xaxis = list(title=""),
+         title = "Counts - Raw Data")
+p
+
+# weighted 
+p2 <- svy %>% group_by(sex, age) %>% summarize(count=survey_total()) 
+p2 <- dcast(p2, age~sex, value.var="count")
+  
+p2 %>% 
+  plot_ly(x=~age, y=~`F`, type="bar", name="Females") %>%
+  add_trace(x=~age, y=~M, type="bar", name="Males") %>%
+    layout(yaxis = list(title="", barmode='group'), 
+         xaxis = list(title=""),
+         title = "Counts - Weighted Data")
+```
+
+## Race
+### Proportion, All
+No NAs
+```{r full-race, echo=FALSE}
+#### pie charts ####
+# of full race dist - not by sex
+r1 <- nsfg %>% count(race) %>% mutate(prop = n/sum(n))
+r2 <- svy %>% group_by(race) %>% summarize(n=survey_total()) %>% mutate(prop = n/sum(n))
+
+props <- rbind(r1[,3], r2[,4]) 
+props$id <- c(rep("raw",4), rep("weighted", 4))
+props$race <- c(rep(c("black", "hispanic", "other", "white"),2))
+
+ggplot(props, aes(x = id, y = prop, fill = race)) + geom_bar(stat = 'identity') + 
+  scale_fill_manual(values=c('#1f77b4',  '#ff7f0e', '#d62728', '#2ca02c'))
+  
+```
+
+### Counts, By Sex
+```{r racesex, echo = FALSE} 
+#### by sex  ####
+raceF <- nsfg %>% filter(sex %in% "F") %>% count(race)
+raceM <- nsfg %>% filter(sex %in% "M") %>% count(race)
+
+race <- cbind(raceF, raceM[,2])
+colnames(race)[2:3] <- c("Females", "Males") 
+
+race %>% 
+  plot_ly(x= ~race, y= ~Females, type='bar', name="Females") %>%
+  add_trace(x=~race, y=~Males, name="Males") %>%
+  layout(yaxis = list(title="", barmode='group'), 
+         xaxis = list(title="Raw Data"))
+
+# weighted
+rw <- svy %>% group_by(sex, race) %>% summarize(n=survey_total())
+rw <- dcast(rw, race~sex, value.var = "n")
+rw %>% plot_ly(x=~race, y=~`F`, type = 'bar', name="Females") %>% 
+        add_trace(x=~race, y=~M, name="Males") %>%
+        layout(xaxis = list(title="Weighted"))
+```
+
+## Age Category & Race
+```{r full-agerace, echo=FALSE}
+age.race <- nsfg %>% count(agecat, race)
+arboth <- dcast(age.race, agecat~race, value.var = "n")
+
+p <- arboth %>% 
+  plot_ly(x=~agecat, y= ~b, type='bar', name="Black") %>%
+  add_trace(x=~agecat, y=~h, name="Hispanic") %>%
+  add_trace(x=~agecat, y=~w, name="White") %>%
+  add_trace(x=~agecat, y=~o, name="Other") %>%
+  layout(yaxis = list(title="", barmode='group'), 
+         xaxis = list(title=""), title="Counts- Raw Data")
+p
+
+## weighted
+arw <- svy %>% group_by(agecat, race) %>% summarize(count=survey_total())
+arw <- dcast(arw, agecat~race, value.var = "count")
+
+arw %>% plot_ly(x=~agecat, y=~b, type='bar', name="Black") %>%
+          add_trace(x=~agecat, y=~h, name="Hispanic") %>%
+          add_trace(x=~agecat, y=~w, name="White") %>%
+          add_trace(x=~agecat, y=~o, name="Other") %>%
+          layout(yaxis = list(title="", barmode='group'), 
+               xaxis = list(title=""), title="Counts - Weighted Data")
+```
+
+## Counts (raw)
+
+```{r pops, echo=FALSE}
+age.raceF <- nsfg %>% filter(sex %in% "F") %>% count(agecat, race)
+age.raceM <- nsfg %>% filter(sex %in% "M") %>% count(agecat, race)
+Fem <- dcast(age.raceF, agecat~race, value.var = "n")
+Male <- dcast(age.raceM, agecat~race, value.var = "n")
+```
+### Females
+```{r fempop, echo=FALSE}
+kable(Fem, title="Females") %>% kable_styling(position="center", full_width = F)
+```
+### Males
+```{r malepop, echo=FALSE}
+kable(Male, title="Males") %>% kable_styling(position="center", full_width = F)
+```
+## needs work - Sex Group FEMALES?? 
+Of those sexually active in the last year: 
+```{r sexpref, echo=FALSE}
+
+grp <- nsfg %>% count(sexgrp.yr)
+
+grp %>% plot_ly(x=~sexgrp.yr, y=~n, type='bar') %>%
+    layout(yaxis = list(title=""), 
+         xaxis = list(title=""))
+```
+
+
+<!--chapter:end:chapters/Egos-Demographics.Rmd-->
+
+# Egos - Partnerships {#subset}
+
+```{r load-altersedgelist, echo=FALSE}
+dat <- readRDS("../data/alters_egos.rds")
+datsvy <- as_survey_design(dat, weights = e.weight, ids = ego)
+```
+## Active Vars
+### Raw Counts  
+```{r actives, echo=FALSE}
+actives <- dat %>% group_by(e.sex) %>% count(active)
+actives <- dcast(actives, active~e.sex, value.var = "n")
+actives[,1] <- c("0-Inactive", "1-Active", "2-No sex lstyr","6-Fewer Partners", "8-Never had sex", "9-Miss/Ref/Dk")
+
+actives %>% plot_ly(x=~active, y=~`F`, type="bar", name="Females") %>%
+  add_trace(x=~active, y=~M, name="Males") %>%
+  layout(title="All Partner Statuses By Ego Sex (3 per ego)",
+         xaxis=list(title=""),
+         yaxis=list(title=""))
+
+# weighted
+#actives2 <- datsvy %>% 
+```
+
+
+
+### Weighted counts (in progress, srvyr issues)
+```{r weightedactives, echo=FALSE}
+#a1w <- svy %>% group_by(sex) %>% summarize(n=survey_total(active1))
+#a1 <- dcast(a1, active1~sex, value.var = "n")
+#a1$active1 <- c("0-Inactive", "1-Active", "2-No sex lstyr", "8-Never had sex", "9-Miss/Ref/Dk")
+#a1p <- a1 %>% plot_ly(x=~active1, y=~`F`, type='bar', name="Females") %>%
+#  add_trace(x=~active1, y=~M, name="Males") %>%
+#  layout(title="1st Partner by EgoSex (counts)",
+#         xaxis=list(title=""),
+#         yaxis=list(title="1st"), showlegend=F)
+``` 
+
+## parts1yr 
+```{r parts1yr, echo=FALSE}
+
+
+
+```
+
+## other ego vars
+rel types ('optype')
+life partners? 
+sex group by age / have had ss contact by age 
+had sex by age 
+
+<!--chapter:end:chapters/Egos-Rels.Rmd-->
+
+# Concurrency & Racial Assortativity 
+
+CURRENTLY - CROSS SECTIONAL CONCURRENCY 
+
+thinking about concurrency and racial assortativity 
+
+previous work shows concurrency drives transmission, and racial asssortativity can maintain / exacerbate disparities in prevalence 
+
+but what about assortativity by concurrency levels? 
+is assortativity similar between monogramous people and those who have concurrent partners? 
+what about among people who have concurrent parters? 
+
+this section takes a look at what is observed in NSFG - to see if there are difference in assortativity and if this idea is worth exploring (and likely simulating to understand the effects)
+
+WILL NEED TO IMPUTE PARTNER RACE FOR MOST NON-ACTIVE PARTNERSHIPS IF WE WANT TO USE A YEAR-SUMMARY MEASURE 
+
+
+
+```{r active-alters, echo=FALSE}
+library(tidyverse)
+library(reshape2)
+library(srvyr)
+# import
+dat <- readRDS("~/nsfg_analysis/data/alters_egos.rds")
+
+## limit to active partnerships 
+dat <- dat %>% filter(active==1)
+
+## new variables
+# t_o = relationship dur at 1 year prior to interview = edge_age_month-12, if edge_age_month-12 is negative, 0
+# t_c = relationship month end (time = 1-12), if still active, 12
+dat$t_o <- ifelse((dat$edge_age_month - 12 >= 0), dat$edge_age_month-12, 0)
+dat$t_c <- dat$edge_age_month
+
+dat$t_o_years <- dat$t_o/12
+dat$t_c_years <- dat$t_c/12
+```
+
+
+see *insert chapter*  for deg distribution
+
+here: what is the race mixing matrix for egos who report only 1 partner
+then: what is the race mixing matrix for egos who report 2 partners
+then: what is the race mixing matrix for egos who report 3 partners
+
+## Unweighted Mixing Plots 
+```{r mixing-unw, echo=FALSE}
+dat <-  dat %>% filter(race %in% "b" | race %in% "h"| race %in% "o" |race %in% "w")
+
+monog <- dat %>% 
+          filter(e.deg.active ==1) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g1 <- ggplot(monog, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 1 Active Partner")
+
+g1 + facet_grid(cols=vars(e.sex))
+
+
+conc <- dat %>% 
+          filter(e.deg.active > 1) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g_conc <- ggplot(conc, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ Concurrent")
+
+g_conc + facet_grid(cols=vars(e.sex))
+
+conc2 <- dat %>% 
+          filter(e.deg.active ==2) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g2 <- ggplot(conc2, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 2 Active Partners")
+
+g2 + facet_grid(cols=vars(e.sex))
+
+conc3 <- dat %>% 
+          filter(e.deg.active ==3) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g3 <- ggplot(conc3, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 3 Active Partners")
+
+g3 + facet_grid(cols=vars(e.sex))
+
+```
+
+## Weighted 
+
+this gets weirder b/c svy design package doesn't seem to handle NAs well, errors when trying to generate counts I think b/c SEs are calculated automatically and they fail 
+
+```{r mixing-svy, echo=FALSE}
+svy <- as_survey_design(dat, weights=e.weight, ids=ego)
+parts1 <- svy %>% filter(e.deg.active==1) %>%
+              group_by(e.sex, e.race, race) %>% 
+              summarize(prop = survey_mean()) %>% 
+              select(-prop_se) 
+
+p <- ggplot(parts1, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 1 Active Partner")
+  
+p + facet_grid(cols=vars(e.sex))
+```
+
+turns out there are no 'other' egos w/ hispanic partners who have a degree of 2, removing 'other' egos from this graph 
+```{r mixing2-svy, echo=FALSE}
+parts2 <- svy %>% filter(e.deg.active==2 & (e.race %in% "b" | e.race %in% "h" | e.race %in% "w")) %>%
+              group_by(e.sex, e.race, race) %>% 
+              summarize(prop = survey_mean()) %>% 
+              select(-prop_se) 
+
+p2 <- ggplot(parts2, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 2 Active Partners")
+  
+p2 + facet_grid(cols=vars(e.sex))
+```
+
+
+<!--chapter:end:chapters/conc.Rmd-->
+
+# Final Words
+
+We have finished a nice book.
+
+<!--chapter:end:chapters/05-summary.Rmd-->
+
+`r if (knitr::is_html_output()) '
+# References {-}
+'`
+
+<!--chapter:end:chapters/06-references.Rmd-->
+
+# Degree {#deg}
+
+```{r deg-active, echo=FALSE}
+
+deg <- svy %>% 
+          mutate(deg.cap = ifelse(deg.main > 2, 2, deg.main)) %>%
+          group_by(sex, race, deg.cap) %>% 
+          summarize(prop = survey_mean()) %>% 
+          select(-prop_se) 
+
+p <- ggplot(deg, aes(x=deg.cap, y=race)) + 
+  geom_point(color="green", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,3))) +
+  scale_size_area(max_size = 20) +
+  theme(legend.position="none") + 
+  labs(title = "Cross-Sectional Degree, 2 = 2+ partners")
+  
+p + facet_grid(cols=vars(sex))
+
+```
+
+<!--chapter:end:chapters/degree.Rmd-->
+

@@ -1,0 +1,156 @@
+# Concurrency & Racial Assortativity 
+
+CURRENTLY - CROSS SECTIONAL CONCURRENCY 
+
+thinking about concurrency and racial assortativity 
+
+previous work shows concurrency drives transmission, and racial asssortativity can maintain / exacerbate disparities in prevalence 
+
+but what about assortativity by concurrency levels? 
+is assortativity similar between monogramous people and those who have concurrent partners? 
+what about among people who have concurrent parters? 
+
+this section takes a look at what is observed in NSFG - to see if there are difference in assortativity and if this idea is worth exploring (and likely simulating to understand the effects)
+
+WILL NEED TO IMPUTE PARTNER RACE FOR MOST NON-ACTIVE PARTNERSHIPS IF WE WANT TO USE A YEAR-SUMMARY MEASURE 
+
+
+
+```{r active-alters, echo=FALSE}
+library(tidyverse)
+library(reshape2)
+library(srvyr)
+# import
+dat <- readRDS("~/nsfg_analysis/data/alters_egos.rds")
+
+## limit to active partnerships 
+dat <- dat %>% filter(active==1)
+
+## new variables
+# t_o = relationship dur at 1 year prior to interview = edge_age_month-12, if edge_age_month-12 is negative, 0
+# t_c = relationship month end (time = 1-12), if still active, 12
+dat$t_o <- ifelse((dat$edge_age_month - 12 >= 0), dat$edge_age_month-12, 0)
+dat$t_c <- dat$edge_age_month
+
+dat$t_o_years <- dat$t_o/12
+dat$t_c_years <- dat$t_c/12
+```
+
+
+see *insert chapter*  for deg distribution
+
+here: what is the race mixing matrix for egos who report only 1 partner
+then: what is the race mixing matrix for egos who report 2 partners
+then: what is the race mixing matrix for egos who report 3 partners
+
+## Unweighted Mixing Plots 
+```{r mixing-unw, echo=FALSE}
+dat <-  dat %>% filter(race %in% "b" | race %in% "h"| race %in% "o" |race %in% "w")
+
+monog <- dat %>% 
+          filter(e.deg.active ==1) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g1 <- ggplot(monog, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 1 Active Partner")
+
+g1 + facet_grid(cols=vars(e.sex))
+
+
+conc <- dat %>% 
+          filter(e.deg.active > 1) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g_conc <- ggplot(conc, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ Concurrent")
+
+g_conc + facet_grid(cols=vars(e.sex))
+
+conc2 <- dat %>% 
+          filter(e.deg.active ==2) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g2 <- ggplot(conc2, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 2 Active Partners")
+
+g2 + facet_grid(cols=vars(e.sex))
+
+conc3 <- dat %>% 
+          filter(e.deg.active ==3) %>%
+          group_by(e.sex, e.race) %>%
+          count(race) %>%
+          mutate(prop = n/sum(n))
+
+g3 <- ggplot(conc3, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 3 Active Partners")
+
+g3 + facet_grid(cols=vars(e.sex))
+
+```
+
+## Weighted 
+
+this gets weirder b/c svy design package doesn't seem to handle NAs well, errors when trying to generate counts I think b/c SEs are calculated automatically and they fail 
+
+```{r mixing-svy, echo=FALSE}
+svy <- as_survey_design(dat, weights=e.weight, ids=ego)
+parts1 <- svy %>% filter(e.deg.active==1) %>%
+              group_by(e.sex, e.race, race) %>% 
+              summarize(prop = survey_mean()) %>% 
+              select(-prop_se) 
+
+p <- ggplot(parts1, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 1 Active Partner")
+  
+p + facet_grid(cols=vars(e.sex))
+```
+
+turns out there are no 'other' egos w/ hispanic partners who have a degree of 2, removing 'other' egos from this graph 
+```{r mixing2-svy, echo=FALSE}
+parts2 <- svy %>% filter(e.deg.active==2 & (e.race %in% "b" | e.race %in% "h" | e.race %in% "w")) %>%
+              group_by(e.sex, e.race, race) %>% 
+              summarize(prop = survey_mean()) %>% 
+              select(-prop_se) 
+
+p2 <- ggplot(parts2, aes(x=e.race, y=race)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,2))) +
+  scale_size_area(max_size = 30) +
+  coord_flip() +
+  theme(legend.position="none") + 
+  labs(title = "Race Mixing Among Egos w/ 2 Active Partners")
+  
+p2 + facet_grid(cols=vars(e.sex))
+```
+

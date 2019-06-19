@@ -1,0 +1,15 @@
+book_filename: "Descriptives_Book"
+delete_merged_file: true
+language:
+  ui:
+    chapter_name: "Chapter "
+
+# directory for chapters 
+rmd_subdir: ["chapters"]
+
+# order is specified here
+rmd_files: ["index.Rmd",
+"chapters/Egos-Demographics.Rmd",
+"chapters/Egos-Rels.Rmd",
+"chapters/conc.Rmd",
+]

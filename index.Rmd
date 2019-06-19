@@ -1,0 +1,35 @@
+--- 
+title: "NSFG: Initial Descriptives"
+author: "Emily Pollock"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+#bibliography: [book.bib, packages.bib]
+#biblio-style: apalike
+#link-citations: yes
+description: "Initial NSFG Descriptives for 15-29-year-old Heterosexuals"
+
+---
+
+# Preface
+
+```{r load-packages, include=FALSE}
+library(here)
+library(tidyverse)
+library(plotly)
+library(srvyr)
+library(reshape2)
+library(kableExtra)
+library(scales)
+library(DataCombine)
+library(DT)
+```
+
+This book contains the NSFG data descriptives for 2006-2015 as it relates to the sexual partnership patterns of 15-44 year olds. 
+
+This is to get a sense of the dataset before conducting further analysis. What does the data look like, what is missing, etc. 
+
+Raw and weighted plots are displayed.  
+
+
+
