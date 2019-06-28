@@ -1,5 +1,11 @@
 # Concurrency & Racial Assortativity 
 
+## GOING TO RE-CREATE IN ERGM EGO?
+
+## other: 
+  - concurrency among cohabs versus marriages versus other 
+  - by age 
+  
 CURRENTLY - CROSS SECTIONAL CONCURRENCY 
 
 thinking about concurrency and racial assortativity 

@@ -29,7 +29,37 @@ This book contains the NSFG data descriptives for 2006-2015 as it relates to the
 
 This is to get a sense of the dataset before conducting further analysis. What does the data look like, what is missing, etc. 
 
-Raw and weighted plots are displayed.  
+Unless otherwise specifed, NSFG survey weights are used. 
+
+__Descriptives for Full Dataset:__  
+Demographics  
+- Age / Age Category
+- Sex  
+- Race
+
+Partnerships  
+- ever had sex 
+- Sexually active in last year
+- number partners in last year (capped and uncapped)
+- Of those, active / inactive partners
+- partnership types 
+- types by active / inactive 
+- who had same-sex contact last year? / ever? 
+
+__Descriptives for restricted pop (15-29):__  
+- proportion of partners within age range by age cat
+- for those outside age range, what type of partnership? 
+
+__Cross-Sectional Network Descriptives - try out ergm ego__
+- degree
+- concurrency rate
+- age mixing 
+- race mixing 
+
+__EpiModel vars__
+- frequency of sex
+- condom use
+(by age cat, sex, race, partnership type?) 
 
 
 

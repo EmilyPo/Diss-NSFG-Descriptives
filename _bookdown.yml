@@ -9,7 +9,8 @@ rmd_subdir: ["chapters"]
 
 # order is specified here
 rmd_files: ["index.Rmd",
-"chapters/Egos-Demographics.Rmd",
-"chapters/Egos-Rels.Rmd",
-"chapters/conc.Rmd",
+"chapters/Demographics.Rmd",
+"chapters/Partnerships.Rmd",
+"chapters/Degree.Rmd",
+"chapters/Concurrency.Rmd",
 ]

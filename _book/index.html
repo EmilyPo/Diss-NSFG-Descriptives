@@ -25,7 +25,7 @@
 <meta name="author" content="Emily Pollock">
 
 
-<meta name="date" content="2019-06-19">
+<meta name="date" content="2019-06-28">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,7 +33,7 @@
   
   
 
-<link rel="next" href="egos.html">
+<link rel="next" href="dem.html">
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
@@ -56,6 +56,11 @@
 <link href="libs/plotly-htmlwidgets-css-1.39.2/plotly-htmlwidgets.css" rel="stylesheet" />
 <script src="libs/plotly-main-1.39.2/plotly-latest.min.js"></script>
 <script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="libs/datatables-binding-0.5/datatables.js"></script>
+<link href="libs/dt-core-1.10.16/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="libs/dt-core-1.10.16/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="libs/dt-core-1.10.16/js/jquery.dataTables.min.js"></script>
 
 
 
@@ -76,35 +81,35 @@
 
 <li class="divider"></li>
 <li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Preface</a></li>
-<li class="chapter" data-level="2" data-path="egos.html"><a href="egos.html"><i class="fa fa-check"></i><b>2</b> Egos</a><ul>
-<li class="chapter" data-level="2.1" data-path="egos.html"><a href="egos.html#sex"><i class="fa fa-check"></i><b>2.1</b> Sex</a></li>
-<li class="chapter" data-level="2.2" data-path="egos.html"><a href="egos.html#age"><i class="fa fa-check"></i><b>2.2</b> Age</a></li>
-<li class="chapter" data-level="2.3" data-path="egos.html"><a href="egos.html#race"><i class="fa fa-check"></i><b>2.3</b> Race</a><ul>
-<li class="chapter" data-level="2.3.1" data-path="egos.html"><a href="egos.html#proportion-all"><i class="fa fa-check"></i><b>2.3.1</b> Proportion, All</a></li>
-<li class="chapter" data-level="2.3.2" data-path="egos.html"><a href="egos.html#counts-by-sex"><i class="fa fa-check"></i><b>2.3.2</b> Counts, By Sex</a></li>
+<li class="chapter" data-level="2" data-path="dem.html"><a href="dem.html"><i class="fa fa-check"></i><b>2</b> Demographics</a><ul>
+<li class="chapter" data-level="2.1" data-path="dem.html"><a href="dem.html#sex-age"><i class="fa fa-check"></i><b>2.1</b> Sex &amp; Age</a></li>
+<li class="chapter" data-level="2.2" data-path="dem.html"><a href="dem.html#race"><i class="fa fa-check"></i><b>2.2</b> Race</a><ul>
+<li class="chapter" data-level="2.2.1" data-path="dem.html"><a href="dem.html#counts-by-sex"><i class="fa fa-check"></i><b>2.2.1</b> Counts, By Sex</a></li>
 </ul></li>
-<li class="chapter" data-level="2.4" data-path="egos.html"><a href="egos.html#age-category-race"><i class="fa fa-check"></i><b>2.4</b> Age Category &amp; Race</a></li>
-<li class="chapter" data-level="2.5" data-path="egos.html"><a href="egos.html#counts-raw"><i class="fa fa-check"></i><b>2.5</b> Counts (raw)</a><ul>
-<li class="chapter" data-level="2.5.1" data-path="egos.html"><a href="egos.html#females"><i class="fa fa-check"></i><b>2.5.1</b> Females</a></li>
-<li class="chapter" data-level="2.5.2" data-path="egos.html"><a href="egos.html#males"><i class="fa fa-check"></i><b>2.5.2</b> Males</a></li>
+<li class="chapter" data-level="2.3" data-path="dem.html"><a href="dem.html#age-category-race"><i class="fa fa-check"></i><b>2.3</b> Age Category &amp; Race</a></li>
+<li class="chapter" data-level="2.4" data-path="dem.html"><a href="dem.html#to-add"><i class="fa fa-check"></i><b>2.4</b> TO ADD</a></li>
+<li class="chapter" data-level="2.5" data-path="dem.html"><a href="dem.html#unweighted-counts"><i class="fa fa-check"></i><b>2.5</b> Unweighted Counts</a><ul>
+<li class="chapter" data-level="2.5.1" data-path="dem.html"><a href="dem.html#females"><i class="fa fa-check"></i><b>2.5.1</b> Females</a></li>
+<li class="chapter" data-level="2.5.2" data-path="dem.html"><a href="dem.html#males"><i class="fa fa-check"></i><b>2.5.2</b> Males</a></li>
 </ul></li>
-<li class="chapter" data-level="2.6" data-path="egos.html"><a href="egos.html#needs-work---sex-group-females"><i class="fa fa-check"></i><b>2.6</b> needs work - Sex Group FEMALES??</a></li>
 </ul></li>
-<li class="chapter" data-level="3" data-path="subset.html"><a href="subset.html"><i class="fa fa-check"></i><b>3</b> Egos - Partnerships</a><ul>
-<li class="chapter" data-level="3.1" data-path="subset.html"><a href="subset.html#active-vars"><i class="fa fa-check"></i><b>3.1</b> Active Vars</a><ul>
-<li class="chapter" data-level="3.1.1" data-path="subset.html"><a href="subset.html#raw-counts"><i class="fa fa-check"></i><b>3.1.1</b> Raw Counts</a></li>
-<li class="chapter" data-level="3.1.2" data-path="subset.html"><a href="subset.html#weighted-counts-in-progress-srvyr-issues"><i class="fa fa-check"></i><b>3.1.2</b> Weighted counts (in progress, srvyr issues)</a></li>
+<li class="chapter" data-level="3" data-path="parts.html"><a href="parts.html"><i class="fa fa-check"></i><b>3</b> Partnerships</a><ul>
+<li class="chapter" data-level="3.1" data-path="parts.html"><a href="parts.html#sexual-activty-in-last-year"><i class="fa fa-check"></i><b>3.1</b> Sexual Activty in Last Year</a><ul>
+<li class="chapter" data-level="3.1.1" data-path="parts.html"><a href="parts.html#females-1"><i class="fa fa-check"></i><b>3.1.1</b> Females</a></li>
 </ul></li>
-<li class="chapter" data-level="3.2" data-path="subset.html"><a href="subset.html#parts1yr"><i class="fa fa-check"></i><b>3.2</b> parts1yr</a></li>
-<li class="chapter" data-level="3.3" data-path="subset.html"><a href="subset.html#other-ego-vars"><i class="fa fa-check"></i><b>3.3</b> other ego vars</a></li>
+<li class="chapter" data-level="3.2" data-path="parts.html"><a href="parts.html#partnerships-in-last-year"><i class="fa fa-check"></i><b>3.2</b> Partnerships in Last Year</a></li>
+<li class="chapter" data-level="3.3" data-path="parts.html"><a href="parts.html#active-inactive"><i class="fa fa-check"></i><b>3.3</b> Active / Inactive</a></li>
+<li class="chapter" data-level="3.4" data-path="parts.html"><a href="parts.html#other-ego-vars"><i class="fa fa-check"></i><b>3.4</b> other ego vars</a></li>
+<li class="chapter" data-level="3.5" data-path="parts.html"><a href="parts.html#needs-work---sex-group-females"><i class="fa fa-check"></i><b>3.5</b> needs work - Sex Group FEMALES??</a></li>
 </ul></li>
-<li class="chapter" data-level="4" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html"><i class="fa fa-check"></i><b>4</b> Concurrency &amp; Racial Assortativity</a><ul>
-<li class="chapter" data-level="4.1" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html#unweighted-mixing-plots"><i class="fa fa-check"></i><b>4.1</b> Unweighted Mixing Plots</a></li>
-<li class="chapter" data-level="4.2" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html#weighted"><i class="fa fa-check"></i><b>4.2</b> Weighted</a></li>
+<li class="chapter" data-level="4" data-path="deg.html"><a href="deg.html"><i class="fa fa-check"></i><b>4</b> Degree</a></li>
+<li class="chapter" data-level="5" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html"><i class="fa fa-check"></i><b>5</b> Concurrency &amp; Racial Assortativity</a><ul>
+<li class="chapter" data-level="5.1" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html#going-to-re-create-in-ergm-ego"><i class="fa fa-check"></i><b>5.1</b> GOING TO RE-CREATE IN ERGM EGO?</a></li>
+<li class="chapter" data-level="5.2" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html#other"><i class="fa fa-check"></i><b>5.2</b> other:</a></li>
+<li class="chapter" data-level="5.3" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html#unweighted-mixing-plots"><i class="fa fa-check"></i><b>5.3</b> Unweighted Mixing Plots</a></li>
+<li class="chapter" data-level="5.4" data-path="concurrency-racial-assortativity.html"><a href="concurrency-racial-assortativity.html#weighted"><i class="fa fa-check"></i><b>5.4</b> Weighted</a></li>
 </ul></li>
-<li class="chapter" data-level="5" data-path="final-words.html"><a href="final-words.html"><i class="fa fa-check"></i><b>5</b> Final Words</a></li>
-<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
-<li class="chapter" data-level="6" data-path="deg.html"><a href="deg.html"><i class="fa fa-check"></i><b>6</b> Degree</a></li>
+<li class="chapter" data-level="6" data-path="final-words.html"><a href="final-words.html"><i class="fa fa-check"></i><b>6</b> Final Words</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
 
@@ -128,13 +133,23 @@
 <div id="header">
 <h1 class="title">NSFG: Initial Descriptives</h1>
 <p class="author"><em>Emily Pollock</em></p>
-<p class="date"><em>2019-06-19</em></p>
+<p class="date"><em>2019-06-28</em></p>
 </div>
 <div id="preface" class="section level1">
 <h1><span class="header-section-number">Chapter 1</span> Preface</h1>
 <p>This book contains the NSFG data descriptives for 2006-2015 as it relates to the sexual partnership patterns of 15-44 year olds.</p>
 <p>This is to get a sense of the dataset before conducting further analysis. What does the data look like, what is missing, etc.</p>
-<p>Raw and weighted plots are displayed.</p>
+<p>Unless otherwise specifed, NSFG survey weights are used.</p>
+<p><strong>Descriptives for Full Dataset:</strong><br />
+Demographics<br />
+- Age / Age Category - Sex<br />
+- Race</p>
+<p>Partnerships<br />
+- ever had sex - Sexually active in last year - number partners in last year (capped and uncapped) - Of those, active / inactive partners - partnership types - types by active / inactive - who had same-sex contact last year? / ever?</p>
+<p><strong>Descriptives for restricted pop (15-29):</strong><br />
+- proportion of partners within age range by age cat - for those outside age range, what type of partnership?</p>
+<p><strong>Cross-Sectional Network Descriptives - try out ergm ego</strong> - degree - concurrency rate - age mixing - race mixing</p>
+<p><strong>EpiModel vars</strong> - frequency of sex - condom use (by age cat, sex, race, partnership type?)</p>
 
 </div>
             </section>
@@ -143,7 +158,7 @@
         </div>
       </div>
 
-<a href="egos.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="dem.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>

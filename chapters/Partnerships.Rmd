@@ -1,0 +1,147 @@
+# Partnerships {#parts}
+
+
+- partnership types 
+- types by active / inactive 
+- who had same-sex contact last year? / ever? 
+
+## Sexual Activty in Last Year
+### Females 
+```{r activity-graph-females, echo=FALSE}
+actF <- svy %>% filter(sex %in% "F") %>%
+                mutate(act = ifelse(HADSEX == 2, "1", 
+                            ifelse(PARTS1YR == 0, "2", 
+                            ifelse(PARTS1YR > 0, "3", NA)))) %>%
+                group_by(agecat, act) %>% 
+                summarize(n=survey_total()) %>%
+                group_by(agecat) %>%
+                mutate(prop = n/sum(n))
+actF <- dcast(actF, agecat~act, value.var = "prop")
+
+
+
+actF %>% plot_ly(x=~agecat, y=~`1`, type='bar', name='Never Sex') %>%
+          add_trace(y=~`2`, type='bar', name = "Inactive") %>%
+          add_trace(y=~`3`, type='bar', name = "Active") %>%
+          layout(title = "Sexual Activity by Age, Females", 
+                 yaxis = list(title="Proportion"),
+                 xaxis = list(title="Age Category"))
+
+
+```
+### Males
+```{r sexual-activity-males, echo=FALSE}
+actM <- svy %>% filter(sex %in% "M") %>%
+                mutate(act = ifelse(HADSEX == 2, "1", 
+                            ifelse(PARTS1YR == 0, "2", 
+                            ifelse(PARTS1YR > 0, "3", NA)))) %>%
+                group_by(agecat, act) %>% 
+                summarize(n=survey_total()) %>%
+                group_by(agecat) %>%
+                mutate(prop = n/sum(n))
+actM <- dcast(actM, agecat~act, value.var = "prop")
+
+actM %>% plot_ly(x=~agecat, y=~`1`, type='bar', name='Never Sex') %>%
+          add_trace(y=~`2`, type='bar', name = "Inactive") %>%
+          add_trace(y=~`3`, type='bar', name = "Active") %>%
+          layout(title = "Sexual Activity by Age, Males", 
+                 yaxis = list(title="Proportion"),
+                 xaxis = list(title="Age Category"))
+```
+
+```{r load-altersedgelist, echo=FALSE}
+dat <- readRDS("~/NSFG_DATA/objects/alters_egos.rds")
+# limit to partnership in last year 
+dat_subset <- dat %>% filter(active < 9)
+datsvy <- as_survey_design(dat, weights = e.weight, ids = ego)
+datsvy_sub <- as_survey_design(dat_subset, weights = e.weight, ids = ego)
+```
+## Partnerships in Last Year 
+
+```{r parts1yr, echo=FALSE}
+partsyr <- suppressWarnings(svy %>% 
+                              filter(PARTS1YR >= 0) %>% 
+                              group_by(PARTS1YR) %>% 
+                              summarize(n=survey_total()))
+
+partsyr$PARTS1YR <- as.numeric(partsyr$PARTS1YR)
+partsyr <- partsyr[order(partsyr$PARTS1YR),] 
+
+partsyr %>% plot_ly(x=~PARTS1YR, y=~n, type="bar") %>%
+            layout(title="parts. in last year among those who have had sex")
+
+datatable(round(partsyr, 0))
+```
+
+```{r prop4, echo=FALSE, results='hide'}
+props <- suppressWarnings(svy %>% 
+                            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
+                            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
+                            group_by(parts_prop) %>% 
+                            summarize(n=survey_total()) %>%
+                            mutate(prop = n/sum(n)))
+
+propF <- suppressWarnings(svy %>% 
+                            filter(sex %in% 'F') %>%
+                            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
+                            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
+                            group_by(parts_prop) %>% 
+                            summarize(n=survey_total()) %>%
+                            mutate(prop = n/sum(n)))
+
+propM <- suppressWarnings(svy %>% 
+                            filter(sex %in% 'M') %>%
+                            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
+                            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
+                            group_by(parts_prop) %>% 
+                            summarize(n=survey_total()) %>%
+                            mutate(prop = n/sum(n)))
+```
+
+Only `r props[2,4]*100`% of respondents report more than 3 partnership in the last year.  
+`r propF[2,4]*100`% of Females  
+`r propM[2,4]*100`% of Males  
+
+
+## Active / Inactive 
+(of the up to 3 detailed partnerships reported in the last year)
+
+```{r weightedactives, echo=FALSE}
+a1w <- suppressWarnings(datsvy_sub %>% 
+  filter(active < 2) %>% 
+  group_by(e.sex, active) %>% 
+  summarize(count=survey_total()))
+
+a1w <- dcast(a1w, active~e.sex, value.var = "count")
+a1w$active <- c("0-Inactive", "1-Active")
+
+a1p <- a1w %>% plot_ly(x=~active, y=~`F`, type='bar', name="Females") %>%
+  add_trace(x=~active, y=~M, name="Males") %>%
+  layout(title="Partnerships in Last Year", 
+         yaxis = list(title = "Counts"),
+         xaxis = list(title = ""))
+
+a1p
+``` 
+
+
+
+## other ego vars
+rel types ('optype')
+sex group by age / have had ss contact by age 
+
+
+
+
+## needs work - Sex Group FEMALES?? 
+Of those sexually active in the last year: 
+```{r sexpref, echo=FALSE}
+
+grp <- nsfg %>% count(sexgrp.yr)
+
+grp %>% plot_ly(x=~sexgrp.yr, y=~n, type='bar') %>%
+    layout(yaxis = list(title=""), 
+         xaxis = list(title=""))
+```
+
+
