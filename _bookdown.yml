@@ -11,6 +11,6 @@ rmd_subdir: ["chapters"]
 rmd_files: ["index.Rmd",
 "chapters/Demographics.Rmd",
 "chapters/Partnerships.Rmd",
-"chapters/Degree.Rmd",
-"chapters/Concurrency.Rmd",
+"chapters/ActivePartnerships.Rmd",
+"chapters/Summary.Rmd"
 ]

@@ -33,7 +33,6 @@ p3 %>%
 ```
 
 ## Race
-### Counts, By Sex
 ```{r racesex, echo = FALSE} 
 rw <- svy %>% group_by(sex, race) %>% summarize(n=survey_total())
 rw <- dcast(rw, race~sex, value.var = "n")
@@ -55,9 +54,7 @@ arw %>% plot_ly(x=~agecat, y=~b, type='bar', name="Black") %>%
                xaxis = list(title=""), title="Counts by AgeCat & Race")
 ```
 
-## TO ADD
 
-- currently married / ever married by race/age/sex
 
 ## Unweighted Counts 
 

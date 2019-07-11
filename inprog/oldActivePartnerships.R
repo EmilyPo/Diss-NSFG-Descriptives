@@ -1,5 +1,6 @@
-# Active Partnerships {#parts}
-
+# code from first attempt of this chapter, things that didn't make it into the final 
+# mostly because it's easier to use the edgelist data rather than the wide data
+# kept in rmd format because I am lazy 
 
 ## Active Variables
 ```{r active_vars, echo=FALSE}
@@ -13,11 +14,11 @@ colnames(actives) <- c("active", "First Partner", "Second Partner", "Third Partn
 actives[,1] <- as.character(actives[,1 ])
 
 actives %>% plot_ly(x=~active, y=~`First Partner`, type="bar", name="First Partner") %>%
-              add_trace(x=~active, y=~`Second Partner`, type="bar", name="Second Partner") %>%
-              add_trace(x=~active, y=~`Third Partner`, type="bar", name="Third Partner")
+  add_trace(x=~active, y=~`Second Partner`, type="bar", name="Second Partner") %>%
+  add_trace(x=~active, y=~`Third Partner`, type="bar", name="Third Partner")
 
 ma1 <- nsfg1529 %>% filter(sex %in% "M") %>% count(active1)
-#active1 <- 
+
 
 
 ```
@@ -38,8 +39,8 @@ dist2 <- cbind(f.prop[,c(1,3)], m.prop[,3]);
 colnames(dist2) <- c("Degree", "Females", "Males")
 
 dist2 %>% plot_ly(x=~Degree, y=~Females, type="bar", name = "Females") %>%
-            add_trace(x=~Degree, y=~Males, name="Males") %>%
-            layout(xaxis=list(title=""), yaxis=list(title=""))
+  add_trace(x=~Degree, y=~Males, name="Males") %>%
+  layout(xaxis=list(title=""), yaxis=list(title=""))
 ```
 
 
@@ -55,9 +56,9 @@ rels <- c("Cur. Spouse", "Cur. Cohab", "Former Spouse", "Former Cohab", "Other")
 
 ops <- cbind(rels, op1[2], op2[2], op3); colnames(ops) <- c("reltype", "rel1", "rel2", "rel3") 
 ops <- ops %>% mutate(all = rel1+rel2+rel3) %>% 
-            plot_ly(x=~reltype, y=~all, type="bar") %>%
-              layout(xaxis=list(title="Active Relationship Type"), 
-                     yaxis=list(title=""))
+  plot_ly(x=~reltype, y=~all, type="bar") %>%
+  layout(xaxis=list(title="Active Relationship Type"), 
+         yaxis=list(title=""))
 ops
 ```
 
@@ -80,10 +81,10 @@ dt3 <- InsertRow(dt3, NewRow = new, RowNum=3)
 dt <- dt1 + dt2 + dt3; dt[,1] <- rels; colnames(dt) <- c("reltype", "adols", "mid20s", "late20s")
 
 dt %>% plot_ly(x=~reltype, y=~adols, type="bar", name = "15-19") %>%
-        add_trace(x=~reltype, y=~mid20s, name="20-24") %>%
-        add_trace(x=~reltype, y=~late20s, name="25-29") %>%
-        layout(xaxis=list(title="Active Relationship Types"),
-               yaxis=list(title=""))
+  add_trace(x=~reltype, y=~mid20s, name="20-24") %>%
+  add_trace(x=~reltype, y=~late20s, name="25-29") %>%
+  layout(xaxis=list(title="Active Relationship Types"),
+         yaxis=list(title=""))
 ```
 
 ### Rel Age by Rel Type
@@ -99,9 +100,9 @@ durs <- cbind(dur1, dur2[,2], dur3[,2]); colnames(durs) <- c("reltype", "first",
 durs[,1] <- c("Current Married", "Current Cohab", "Other")
 
 durs %>% plot_ly(x=~reltype, y=~first, type="bar", name = "1st most recent") %>%
-        add_trace(x=~reltype, y=~second, name="2nd most recent") %>%
-        add_trace(x=~reltype, y=~third, name="3rd most recent") %>%
-        layout(xaxis=list(title="Active Relationship Types"),
-               yaxis=list(title=""))
+  add_trace(x=~reltype, y=~second, name="2nd most recent") %>%
+  add_trace(x=~reltype, y=~third, name="3rd most recent") %>%
+  layout(xaxis=list(title="Active Relationship Types"),
+         yaxis=list(title=""))
 ```
 

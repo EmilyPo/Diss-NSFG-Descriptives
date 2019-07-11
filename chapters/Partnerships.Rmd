@@ -1,12 +1,7 @@
-# Partnerships {#parts}
-
-
-- partnership types 
-- types by active / inactive 
-- who had same-sex contact last year? / ever? 
+# Relationships Overview {#allrels}
 
 ## Sexual Activty in Last Year
-### Females 
+### Females  
 ```{r activity-graph-females, echo=FALSE}
 actF <- svy %>% filter(sex %in% "F") %>%
                 mutate(act = ifelse(HADSEX == 2, "1", 
@@ -28,8 +23,11 @@ actF %>% plot_ly(x=~agecat, y=~`1`, type='bar', name='Never Sex') %>%
                  xaxis = list(title="Age Category"))
 
 
-```
-### Males
+```  
+
+
+### Males  
+
 ```{r sexual-activity-males, echo=FALSE}
 actM <- svy %>% filter(sex %in% "M") %>%
                 mutate(act = ifelse(HADSEX == 2, "1", 
@@ -49,13 +47,8 @@ actM %>% plot_ly(x=~agecat, y=~`1`, type='bar', name='Never Sex') %>%
                  xaxis = list(title="Age Category"))
 ```
 
-```{r load-altersedgelist, echo=FALSE}
-dat <- readRDS("~/NSFG_DATA/objects/alters_egos.rds")
-# limit to partnership in last year 
-dat_subset <- dat %>% filter(active < 9)
-datsvy <- as_survey_design(dat, weights = e.weight, ids = ego)
-datsvy_sub <- as_survey_design(dat_subset, weights = e.weight, ids = ego)
-```
+
+
 ## Partnerships in Last Year 
 
 ```{r parts1yr, echo=FALSE}
@@ -103,45 +96,86 @@ Only `r props[2,4]*100`% of respondents report more than 3 partnership in the la
 `r propM[2,4]*100`% of Males  
 
 
-## Active / Inactive 
-(of the up to 3 detailed partnerships reported in the last year)
+## Ever Married or Cohabitated 
+### Overall  
+```{r evmarcoh, echo=FALSE}
+evmar <- suppressWarnings(svy %>% 
+          group_by(agecat, EVMARCOH) %>% 
+          summarize(count=survey_total()))
+evmar <- dcast(evmar, agecat~EVMARCOH, value.var = "count")
+evmar$prop <- evmar$`1` / (evmar$`1` + evmar$`2`) 
 
-```{r weightedactives, echo=FALSE}
-a1w <- suppressWarnings(datsvy_sub %>% 
-  filter(active < 2) %>% 
-  group_by(e.sex, active) %>% 
-  summarize(count=survey_total()))
+evmar %>% plot_ly(x=~agecat, y=~prop, type='bar') %>%
+          layout(yaxis = list(title="Proportion"), 
+               xaxis = list(title="Age Category"), title="Ever Married or Cohabitated")
 
-a1w <- dcast(a1w, active~e.sex, value.var = "count")
-a1w$active <- c("0-Inactive", "1-Active")
+```
+### By Sex  
+```{r evmar-sex, echo=FALSE}
+evmarSex <- suppressWarnings(svy %>% 
+              group_by(agecat, sex, EVMARCOH) %>% 
+              summarize(count=survey_total())) 
+evmarSex <- dcast(evmarSex, agecat+sex~EVMARCOH, value.var = "count")
+evmarSex$prop <- evmarSex$`1` / (evmarSex$`1` + evmarSex$`2`) 
 
-a1p <- a1w %>% plot_ly(x=~active, y=~`F`, type='bar', name="Females") %>%
-  add_trace(x=~active, y=~M, name="Males") %>%
-  layout(title="Partnerships in Last Year", 
-         yaxis = list(title = "Counts"),
-         xaxis = list(title = ""))
+evmarSex <- dcast(evmarSex, agecat~sex, value.var = "prop")
 
-a1p
-``` 
+evmarSex %>% plot_ly(x=~agecat, y=~`F`, type='bar', name="Females") %>%
+          add_trace(x=~agecat, y=~M, name="Males") %>%
+          layout(yaxis = list(title="", barmode='group'), 
+               xaxis = list(title=""), title="Ever Married or Cohabitated by Sex")
+```
 
+### By Race  
+```{r evmar-race, echo=FALSE}
+evmarRace <- suppressWarnings(svy %>% 
+              group_by(agecat, race, EVMARCOH) %>% 
+              summarize(count=survey_total()))
+evmarRace <- dcast(evmarRace, agecat+race~EVMARCOH, value.var = "count")
+evmarRace$prop <- evmarRace$`1` / (evmarRace$`1` + evmarRace$`2`) 
+evmarRace <- dcast(evmarRace, agecat~race, value.var = "prop")
 
+evmarRace %>% plot_ly(x=~agecat, y=~b, type='bar', name="Black") %>%
+          add_trace(x=~agecat, y=~h, name="Hispanic") %>%
+          add_trace(x=~agecat, y=~w, name="White") %>%
+          add_trace(x=~agecat, y=~o, name="Other") %>%
+          layout(yaxis = list(title="", barmode='group'), 
+               xaxis = list(title=""), title="Ever Married or Cohabitated by Race")
+```
 
-## other ego vars
-rel types ('optype')
-sex group by age / have had ss contact by age 
+## Currently Married or Cohabitating 
 
+```{r curr-marcoh, echo=FALSE}
 
+currmar <- suppressWarnings(svy %>%
+            mutate(mcoh = ifelse((MARSTAT %in% "1" | MARSTAT %in% "2"), 1, 2)) %>%
+            group_by(agecat, mcoh) %>%
+            summarize(n = survey_total()))
+currmar <- dcast(currmar, agecat~mcoh, value.var = "n")
+currmar$prop <- currmar$`1` / (currmar$`1` + currmar$`2`)
 
+currmar %>% plot_ly(x=~agecat, y=~prop, type='bar') %>%
+          layout(yaxis = list(title="Proportion"), 
+               xaxis = list(title="Age Category"), title="Currently Married or Cohabitating")
 
-## needs work - Sex Group FEMALES?? 
-Of those sexually active in the last year: 
-```{r sexpref, echo=FALSE}
-
-grp <- nsfg %>% count(sexgrp.yr)
-
-grp %>% plot_ly(x=~sexgrp.yr, y=~n, type='bar') %>%
-    layout(yaxis = list(title=""), 
-         xaxis = list(title=""))
 ```
 
 
+## Same-Sex Contacts
+```{r sexpref, echo=FALSE}
+ssany <- suppressWarnings(svy %>% 
+          mutate(ssany = ifelse(SAMESEXANY %in% 1, 1,
+                                ifelse((SAMESEXANY %in% 5 | SAMESEXANY %in% 7), 2, 0))) %>%
+          group_by(agecat, sex, ssany) %>%
+          summarize(n=survey_total()))
+
+ssany <- dcast(ssany, agecat+sex~ssany, value.var = "n")
+ssany$prop <- ssany$`1`/(ssany$`1` + ssany$`2`)
+ssany <- dcast(ssany, agecat~sex, value.var = "prop")
+
+ssany %>% plot_ly(x=~agecat, y=~`F`, type="bar", name="Females") %>%
+          add_trace(x=~agecat, y=~M, type="bar", name="Males") %>%
+          layout(title="Proportion Ever Had Same-Sex Contact", 
+                 yaxis=list(title=""))
+
+```
