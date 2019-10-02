@@ -21,8 +21,6 @@ actF %>% plot_ly(x=~agecat, y=~`1`, type='bar', name='Never Sex') %>%
           layout(title = "Sexual Activity by Age, Females", 
                  yaxis = list(title="Proportion"),
                  xaxis = list(title="Age Category"))
-
-
 ```  
 
 
@@ -52,10 +50,11 @@ actM %>% plot_ly(x=~agecat, y=~`1`, type='bar', name='Never Sex') %>%
 ## Partnerships in Last Year 
 
 ```{r parts1yr, echo=FALSE}
-partsyr <- suppressWarnings(svy %>% 
-                              filter(PARTS1YR >= 0) %>% 
-                              group_by(PARTS1YR) %>% 
-                              summarize(n=survey_total()))
+partsyr <- svy %>% 
+              filter(PARTS1YR >= 0) %>% 
+              mutate(PARTS1YR = as.character(PARTS1YR)) %>%
+              group_by(PARTS1YR) %>% 
+              summarize(n=survey_total())
 
 partsyr$PARTS1YR <- as.numeric(partsyr$PARTS1YR)
 partsyr <- partsyr[order(partsyr$PARTS1YR),] 
@@ -67,41 +66,46 @@ datatable(round(partsyr, 0))
 ```
 
 ```{r prop4, echo=FALSE, results='hide'}
-props <- suppressWarnings(svy %>% 
-                            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
-                            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
-                            group_by(parts_prop) %>% 
-                            summarize(n=survey_total()) %>%
-                            mutate(prop = n/sum(n)))
+props <- svy %>% 
+            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
+                                ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
+            mutate(parts_prop = as.character(parts_prop)) %>%
+            group_by(parts_prop) %>% 
+            summarize(n=survey_total()) %>%
+            mutate(prop = n/sum(n))
 
-propF <- suppressWarnings(svy %>% 
-                            filter(sex %in% 'F') %>%
-                            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
-                            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
-                            group_by(parts_prop) %>% 
-                            summarize(n=survey_total()) %>%
-                            mutate(prop = n/sum(n)))
+propF <- svy %>% 
+            filter(sex %in% 'F') %>%
+            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
+            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
+            mutate(parts_prop = as.character(parts_prop)) %>%
+            group_by(parts_prop) %>% 
+            summarize(n=survey_total()) %>%
+            mutate(prop = n/sum(n))
 
-propM <- suppressWarnings(svy %>% 
-                            filter(sex %in% 'M') %>%
-                            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
-                            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
-                            group_by(parts_prop) %>% 
-                            summarize(n=survey_total()) %>%
-                            mutate(prop = n/sum(n)))
+propM <- svy %>% 
+            filter(sex %in% 'M') %>%
+            mutate(parts_prop = ifelse(as.numeric(vsnpyr) < 4, 1, 
+            ifelse(as.numeric(vsnpyr) >= 4, 2, NA))) %>%
+            mutate(parts_prop = as.character(parts_prop)) %>%
+            group_by(parts_prop) %>% 
+            summarize(n=survey_total()) %>%
+            mutate(prop = n/sum(n))
 ```
 
-Only `r props[2,4]*100`% of respondents report more than 3 partnership in the last year.  
-`r propF[2,4]*100`% of Females  
-`r propM[2,4]*100`% of Males  
+Only `r round(props[2,4],2)*100`% of respondents report more than 3 partnership in the last year.  
+`r round(propF[2,4],2)*100`% of Females  
+`r round(propM[2,4],2)*100`% of Males  
 
 
 ## Ever Married or Cohabitated 
 ### Overall  
 ```{r evmarcoh, echo=FALSE}
-evmar <- suppressWarnings(svy %>% 
+evmar <- svy %>% 
+          mutate(EVMARCOH = as.character(EVMARCOH)) %>%                
           group_by(agecat, EVMARCOH) %>% 
-          summarize(count=survey_total()))
+          summarize(count=survey_total())
+
 evmar <- dcast(evmar, agecat~EVMARCOH, value.var = "count")
 evmar$prop <- evmar$`1` / (evmar$`1` + evmar$`2`) 
 
@@ -110,11 +114,15 @@ evmar %>% plot_ly(x=~agecat, y=~prop, type='bar') %>%
                xaxis = list(title="Age Category"), title="Ever Married or Cohabitated")
 
 ```
+
 ### By Sex  
+
 ```{r evmar-sex, echo=FALSE}
-evmarSex <- suppressWarnings(svy %>% 
+evmarSex <- svy %>% 
+              mutate(EVMARCOH = as.character(EVMARCOH)) %>%
               group_by(agecat, sex, EVMARCOH) %>% 
-              summarize(count=survey_total())) 
+              summarize(count=survey_total())
+
 evmarSex <- dcast(evmarSex, agecat+sex~EVMARCOH, value.var = "count")
 evmarSex$prop <- evmarSex$`1` / (evmarSex$`1` + evmarSex$`2`) 
 
@@ -128,9 +136,11 @@ evmarSex %>% plot_ly(x=~agecat, y=~`F`, type='bar', name="Females") %>%
 
 ### By Race  
 ```{r evmar-race, echo=FALSE}
-evmarRace <- suppressWarnings(svy %>% 
+evmarRace <- svy %>% 
+              mutate(EVMARCOH = as.character(EVMARCOH)) %>%
               group_by(agecat, race, EVMARCOH) %>% 
-              summarize(count=survey_total()))
+              summarize(count=survey_total())
+
 evmarRace <- dcast(evmarRace, agecat+race~EVMARCOH, value.var = "count")
 evmarRace$prop <- evmarRace$`1` / (evmarRace$`1` + evmarRace$`2`) 
 evmarRace <- dcast(evmarRace, agecat~race, value.var = "prop")
@@ -143,14 +153,15 @@ evmarRace %>% plot_ly(x=~agecat, y=~b, type='bar', name="Black") %>%
                xaxis = list(title=""), title="Ever Married or Cohabitated by Race")
 ```
 
-## Currently Married or Cohabitating 
+## Currently Married or Cohabitating  
 
 ```{r curr-marcoh, echo=FALSE}
 
-currmar <- suppressWarnings(svy %>%
-            mutate(mcoh = ifelse((MARSTAT %in% "1" | MARSTAT %in% "2"), 1, 2)) %>%
+currmar <- svy %>%
+            mutate(mcoh = ifelse((MARSTAT %in% "1" | MARSTAT %in% "2"), "1", "2")) %>%
             group_by(agecat, mcoh) %>%
-            summarize(n = survey_total()))
+            summarize(n = survey_total())
+
 currmar <- dcast(currmar, agecat~mcoh, value.var = "n")
 currmar$prop <- currmar$`1` / (currmar$`1` + currmar$`2`)
 
@@ -161,13 +172,15 @@ currmar %>% plot_ly(x=~agecat, y=~prop, type='bar') %>%
 ```
 
 
-## Same-Sex Contacts
+
+# Same-Sex Contacts
+
 ```{r sexpref, echo=FALSE}
-ssany <- suppressWarnings(svy %>% 
-          mutate(ssany = ifelse(SAMESEXANY %in% 1, 1,
-                                ifelse((SAMESEXANY %in% 5 | SAMESEXANY %in% 7), 2, 0))) %>%
+ssany <- svy %>% 
+          mutate(ssany = ifelse(SAMESEXANY %in% 1, "1",
+                                ifelse((SAMESEXANY %in% 5 | SAMESEXANY %in% 7), "2", "0"))) %>%
           group_by(agecat, sex, ssany) %>%
-          summarize(n=survey_total()))
+          summarize(n=survey_total())
 
 ssany <- dcast(ssany, agecat+sex~ssany, value.var = "n")
 ssany$prop <- ssany$`1`/(ssany$`1` + ssany$`2`)
@@ -179,3 +192,37 @@ ssany %>% plot_ly(x=~agecat, y=~`F`, type="bar", name="Females") %>%
                  yaxis=list(title=""))
 
 ```
+
+
+don't really understand when / why this question was even asked? 
+
+```{r ss-years, echo=FALSE}
+
+sstrendF <- svy %>% 
+  filter(sex %in% "F") %>%
+  mutate(ssany = ifelse(SAMESEXANY %in% 1, "1", ifelse((SAMESEXANY %in% 5 | SAMESEXANY %in% 7), "2", "0"))) %>%
+  filter(ssany > 0) %>%
+  group_by(agecat, birthcohort, ssany) %>% 
+  summarize(n=survey_total()) %>%
+  dcast(birthcohort+agecat~ssany, value.var = "n") %>%
+  mutate(prop = `1`/(`1` + `2`)) %>%
+  dcast(birthcohort~agecat, value.var = "prop")
+
+sstrendF2 <- svy %>% 
+  filter(sex %in% "F") %>%
+  mutate(SAMESEXANY = as.factor(SAMESEXANY)) %>%
+  group_by(agecat, birthcohort, SAMESEXANY) %>% 
+  summarize(n=survey_total()) %>%
+  dcast(birthcohort+agecat~SAMESEXANY, value.var = "n") 
+
+sstrendF3 <- svy %>% 
+  filter(sex %in% "F") %>%
+  mutate(SAMESEXANY = as.factor(SAMESEXANY)) %>%
+  group_by(agecat, intyr, SAMESEXANY) %>% 
+  summarize(n=survey_total()) %>%
+  dcast(intyr+agecat~SAMESEXANY, value.var = "n")
+``` 
+
+
+
+

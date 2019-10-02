@@ -1,0 +1,237 @@
+# Alter Race Issues {#missingrace}
+
+## Problem
+__alter race was not asked in a variety of situations__
+
+We HAVE alter race for all active partnerships. 
+For MALE EGOS, we HAVE race for all previous cohabs and marriages. 
+We also have a few one-time partner races for MALES if the one-time partner was their most recent partner. 
+
+We DO NOT HAVE alter race for any inactive partnerships or one-time partnerships for females. 
+We DO NOT HAVE alter race for inactive "others" for males. 
+We DO NOT HAVE alter race for male one-time partners that were not their most recent partner. 
+
+```{r race-misings, echo=FALSE}
+
+suppressMessages(library(tidyverse))
+suppressMessages(library(srvyr))
+suppressMessages(library(kableExtra))
+suppressMessages(library(reshape2))
+#suppressMessages(library(plotly))
+library(ergm.ego)
+library(ggplot2)
+
+# full dataset (egos < 30)
+nsfg <- readRDS("~/NSFG_DATA/Full/nsfg_complete.rds")
+svy <- as_survey_design(nsfg, weights = weight, ids = ego)
+
+# long alters list 
+alters <- readRDS("~/NSFG_DATA/Objects/altersegos_survdat.rds")
+svy_alters <- as_survey_design(alters, weights = weight, ids = ego)
+
+
+missingsActive <- alters %>% filter(active ==1) %>% group_by(e.sex, reltype, race) %>% count() %>% dcast(e.sex+reltype~race, value.var = "n")
+
+missingsInactive <- alters %>% filter(active ==0) %>% group_by(e.sex, reltype, race) %>% count() %>% dcast(e.sex+reltype~race, value.var = "n")
+
+MaleOtherInactives <-  alters %>% filter(active ==0, e.sex %in% "M", reltype %in% "Other") %>% 
+  group_by(e.intyr, race) %>% count() %>% dcast(e.intyr~race, value.var = "n")
+
+
+missingsOneTimes <- alters %>% filter(once==1 & active==0) %>% group_by(e.sex, reltype, race, .drop=FALSE) %>% count() %>% dcast(e.sex+reltype~race, value.var = "n")
+
+OTmales <- alters %>% filter(once==1 & active==0, e.sex %in% "M") %>% group_by(e.intyr, alter, race, .drop=FALSE) %>% count() %>% dcast(e.intyr+alter~race, value.var = "n")
+
+
+```
+
+## Active Partnerships
+`r kable(missingsActive)` 
+
+## Inactive Partnerships
+`r kable(missingsInactive)` 
+
+### close up on "other" for males  
+switched how they asked the question? basically all miss/ref/dk and n.asked probably missing for same reason
+
+`r kable(MaleOtherInactives)`
+
+### what about the male one-times that we know about? 
+
+
+## One-Times
+`r kable(missingsOneTimes)` 
+
+for males, by alter 
+`r kable(OTmales)` 
+
+## Imputation 
+
+proposal: impute partner race for missngs 
+
+Males:   
+ - impute missing one-times based on most recent one-times 
+ 
+ Females:  
+  - impute missings one-times based on transposed male one-time responses 
+  
+  
+  other questions - 
+  are female reports of mixing different by cohab/marriage versus other? - mostly yea
+  are male reports of active cohab/marriage different than inactive marriage/cohab? - also yes a bit 
+
+```{r more-mixing, echo=FALSE, include=FALSE}
+# females - active rels by marriage/cohab and other 
+# import objects
+alters <- readRDS("~/NSFG_DATA/Objects/alters.rds")
+egos <- readRDS("~/NSFG_DATA/Objects/egos.rds")
+egosF <- egos %>% filter(sex %in% "F")
+alters_marcoh <- alters %>% filter(optype %in% 1:4)
+alters_other <- alters %>% filter(optype ==5)
+# make ego data object
+dat <- egodata(egos=egos, alters=alters, egoWt = egos$weight, egoIDcol = "ego")
+datFmarcoh <- egodata(egos=egosF, alters=alters_marcoh, egoWt = egos$weight, egoIDcol = "ego")
+datFother <- egodata(egos=egosF, alters=alters_other, egoWt = egos$weight, egoIDcol = "ego")
+
+Fmarcoh <- round(mixingmatrix(datFmarcoh, "race", rowprob = T), 3)
+Fmarcoh <- Fmarcoh[c(1,2,5,6), c(1,2,5,6)]
+Fmarcoh <- melt(Fmarcoh) 
+
+Fmarcoh %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.02)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Female Active MarCoh")
+
+Fother <- round(mixingmatrix(datFother, "race", rowprob = T), 3)
+Fother <- Fother[c(1,2,4,5), c(1,2,4,5)]
+Fother <- melt(Fother) 
+
+Fother %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.02)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Female Active Other")
+```
+
+```{r even-more-mixing, echo=FALSE, include=FALSE}
+
+# objects
+egosM <- egos %>% filter(sex %in% "M")
+alters_active_marcoh <- alters %>% filter(optype %in% 1:4)
+
+# need survdat object b/c has inactives 
+alters_all <- readRDS("~/NSFG_DATA/Objects/altersegos_survdat.rds")
+alters_inactive_marcoh <- alters_all %>% filter(active==0, optype %in% 1:4)
+
+# make ego data object
+datMmarcohA <- egodata(egos=egosM, alters=alters_active_marcoh , egoWt = egos$weight, egoIDcol = "ego")
+datMmarcohI <- egodata(egos=egosM, alters=alters_inactive_marcoh, egoWt = egos$weight, egoIDcol = "ego")
+
+MmarcohA <- round(mixingmatrix(datMmarcohA, "race", rowprob = T), 3)
+MmarcohA  <- MmarcohA [c(1,2,4,5), c(1,2,4,5)]
+MmarcohA  <- melt(MmarcohA ) 
+
+MmarcohA  %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.02)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Male Active MarCoh")
+
+MmarcohI <- round(mixingmatrix(datMmarcohI, "race", rowprob = T), 3)
+MmarcohI <- MmarcohI[c(1,2,4,5), c(1,2,4,5)]
+MmarcohI <- melt(MmarcohI) 
+
+MmarcohI %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.02)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Male Inactive MarCoh")
+
+```
+
+
+  
+  
+## Imputation Targets
+
+need: 
+Male egos:
+  - active "other" alter race prob given male ego race
+  - most recent "one-time" alter race given male ego race 
+ 
+ Females:  
+  - active "cohab/mar" alter race prob given female ego race  
+  - active "other" alter race prob given female ego race  
+  - transposed probs of male ego most recent one-time dist 
+  
+### Male Active Others
+```{r male-target-probs, echo=FALSE}
+# set up alters_other to exclude the few missings
+alters_other <- alters_other %>% mutate(race = ifelse(race %in% "miss/ref/dk", NA,
+                                                      ifelse(race %in% "n.ask", NA, race)))
+
+MaleOthers <- egodata(egos=egosM, alters=alters_other, egoWt = egos$weight, egoIDcol = "ego")
+
+MaleActiveOthers <- round(mixingmatrix(MaleOthers, "race", rowprob = F),0)
+MaleActiveOthersProbs <- round(mixingmatrix(MaleOthers, "race", rowprob = T),3)
+
+# recent one time alters
+alters_once <- alters_all %>% filter(active==0, once==1, alter==1) %>%  
+                              mutate(race = ifelse(race %in% "miss/ref/dk", NA,
+                                                      ifelse(race %in% "n.ask", NA, race)))
+
+MaleRecentOnce <- egodata(egos=egosM, alters=alters_once, egoWt = egos$weight, egoIDcol = "ego")
+
+onces <- round(mixingmatrix(MaleRecentOnce, "race", rowprob = F),0)
+oncesProb <- round(mixingmatrix(MaleRecentOnce, "race", rowprob = T),3)
+
+```
+
+`r kable(MaleActiveOthersProbs)`
+
+### Male Recent One-Times
+
+`r kable(oncesProb)`
+
+### Female Active Mar/Coh
+```{r fem-targets, echo=FALSE}
+alters_marcoh <- alters %>% filter(optype %in% 1:4) %>%
+                            mutate(race = ifelse(race %in% "miss/ref/dk", NA,
+                                                      ifelse(race %in% "n.ask", NA, race)))
+
+alters_other <- alters %>% filter(optype ==5) %>%
+                            mutate(race = ifelse(race %in% "miss/ref/dk", NA,
+                                                      ifelse(race %in% "n.ask", NA, race)))
+
+FemaleMarcoh <- egodata(egos=egosF, alters=alters_marcoh, egoWt = egos$weight, egoIDcol = "ego")
+FemaleOther <- egodata(egos=egosF, alters=alters_other, egoWt = egos$weight, egoIDcol = "ego")
+
+Marcoh <- round(mixingmatrix(FemaleMarcoh, "race", rowprob = F),0)
+MarcohProb<- round(mixingmatrix(FemaleMarcoh, "race", rowprob = T),3)
+
+Other <- round(mixingmatrix(FemaleOther, "race", rowprob = F),0)
+OtherProb<- round(mixingmatrix(FemaleOther, "race", rowprob = T),3)
+```
+
+`r kable(MarcohProb)`
+
+### Female Active Other
+`r kable(OtherProb)`
+
+### Female One-Times
+```{r transposed-ots, echo=FALSE}
+Fonces <- t(onces)
+FoncesProb <- round(Fonces/rowSums(Fonces),3) 
+```
+
+`r kable(FoncesProb)`
+

@@ -1,0 +1,348 @@
+# Network Factors - ALL NSFG {#net-full}
+
+## Degree
+### Histograms
+
+```{r ego-prep, echo=FALSE, message=FALSE}
+library(ergm.ego)
+library(tidyverse)
+library(reshape2)
+library(srvyr)
+library(plotly)
+library(kableExtra)
+
+
+##### import data for egodata ########
+egodat <- readRDS("~/NSFG_DATA/Objects/fullEgodata.rds")
+
+##### make ego data objects #########
+## all actives
+dat <- egodata(egos=egodat$egos, alters=egodat$altersAllActive, egoWt = egodat$egos$weight, egoIDcol = "ego")
+## mar/coh
+datMarcoh <- egodata(egos=egodat$egos, alters=egodat$altersMarCoh, egoWt = egodat$egos$weight, egoIDcol = "ego")
+## others 
+datOther <- egodata(egos=egodat$egos, alters=egodat$altersOther, egoWt = egodat$egos$weight, egoIDcol = "ego")
+## one times 
+datOTs <- egodata(egos=egodat$egos, alters=egodat$altersOnce, egoWt = egodat$egos$weight, egoIDcol = "ego")
+
+# full data
+nsfg <- readRDS("~/NSFG_DATA/Full/nsfg_complete.rds")
+svy <- as_survey_design(nsfg, weights = weight, ids = ego)
+```
+
+__Mean Degree: `r round(nrow(dat$alters)/nrow(dat$egos), 3)`__
+
+```{r degdist, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+meandeg <- nrow(dat$alters)/nrow(dat$egos)
+
+degreedist(dat)
+
+degreedist(dat, by="sex")
+
+degreedist(dat, by="race")
+
+degreedist(dat, by="agecat")
+```
+
+### Bubble Plots  
+
+```{r deg-bubble, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+# excluding the n=14 respondents who report 2 or 3 active married/cohab partners
+
+bubF <- svy %>%
+          filter(sex %in% "F", deg.cohab < 2) %>%
+          mutate(deg.cohab = as.factor(deg.cohab), deg.pers = as.factor(deg.pers)) %>%
+          group_by(deg.cohab, deg.pers, .drop = FALSE) %>%
+          summarize(n = survey_total()) %>% 
+          mutate(prop = n/sum(n)) %>%
+          select(-n, -n_se)
+
+bubF <- suppressMessages(melt(bubF))
+
+bubM <- svy %>%
+          filter(sex %in% "M", deg.cohab < 2) %>%
+          mutate(deg.cohab = as.factor(deg.cohab), deg.pers = as.factor(deg.pers)) %>%
+          group_by(deg.cohab, deg.pers, .drop = FALSE) %>%
+          summarize(n = survey_total()) %>% 
+          mutate(prop = n/sum(n)) %>%
+          select(-n, -n_se)
+
+bubM <- suppressMessages(melt(bubM))
+
+My_Theme = theme(
+  axis.title = element_text(size = 16),
+  axis.text = element_text(size=16),
+  title = element_text(size=16))
+
+bubFplot <- ggplot(bubF, aes(deg.pers, deg.cohab)) +
+              geom_point(color="green", alpha=0.3, aes(size=value)) +
+              scale_size_area(max_size = 30) +
+              geom_text(aes(label=round(value,3), size=0.04)) +
+              theme(legend.position="none") + 
+              labs(title="Females") +
+              My_Theme
+
+bubMplot <- ggplot(bubM, aes(deg.pers, deg.cohab)) +
+              geom_point(color="green", alpha=0.3, aes(size=value)) +
+              scale_size_area(max_size = 30) +
+              geom_text(aes(label=round(value,3), size=0.04)) +
+              theme(legend.position="none") + 
+              labs(title="Males") +
+              My_Theme
+
+#grid.arrange(bubFplot, bubMplot, ncol=2)
+bubFplot 
+
+bubMplot
+```
+
+## Age Mixing 
+
+### Overall 
+```{r age-mixing, echo=FALSE, fig.align="center"}
+agemixF <- round(mixingmatrix(dat[dat$egos$sex %in% "F"], "agecat", rowprob = T), 3)
+agemixF <- agemixF[2:7,]
+amF <- melt(agemixF)
+amF$sex <- "F"
+
+agemixM <- round(mixingmatrix(dat[dat$egos$sex %in% "M"], "agecat", rowprob = T), 3)
+agemixM <- agemixM[2:7,]
+amM <- melt(agemixM)
+amM$sex <- "M"
+
+am <-  rbind(amF, amM)
+
+am %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.01)) +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45)) +
+  coord_flip() +
+  labs(title = "Age Mixing - All Active Rels") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+### Marriages / Cohabs
+
+```{r age-marcoh, echo=FALSE, fig.align="center"}
+agemixF <- round(mixingmatrix(datMarcoh[datMarcoh$egos$sex %in% "F"], "agecat", rowprob = T), 3)
+agemixF <- agemixF[2:7,]
+amF <- melt(agemixF)
+amF$sex <- "F"
+
+agemixM <- round(mixingmatrix(datMarcoh[datMarcoh$egos$sex %in% "M"], "agecat", rowprob = T), 3)
+agemixM <- agemixM[2:7,]
+amM <- melt(agemixM)
+amM$sex <- "M"
+
+am <-  rbind(amF, amM)
+
+am %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.2, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.015)) +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45)) +
+  coord_flip() +
+  labs(title = "Age Mixing - All Active Mar/Cohs") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+### Others 
+```{r age-other, echo=FALSE, fig.align="center"}
+agemixF <- round(mixingmatrix(datOther[datOther$egos$sex %in% "F"], "agecat", rowprob = T), 3)
+agemixF <- agemixF[2:7,]
+amF <- melt(agemixF)
+amF$sex <- "F"
+
+agemixM <- round(mixingmatrix(datOther[datOther$egos$sex %in% "M"], "agecat", rowprob = T), 3)
+agemixM <- agemixM[2:7,]
+amM <- melt(agemixM)
+amM$sex <- "M"
+
+am <-  rbind(amF, amM)
+
+am %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.2, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.015)) +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45)) +
+  coord_flip() +
+  labs(title = "Age Mixing - All Active Others") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+### One-Times
+
+this needs some work 
+
+```{r agemixing-onetimes, echo=FALSE}
+agemixF <- round(mixingmatrix(datOTs[datOTs$egos$sex %in% "F"], "agecat", rowprob = T), 3)
+agemixF <- agemixF[1:6,]
+amF <- melt(agemixF)
+amF$sex <- "F"
+
+agemixM <- round(mixingmatrix(datOTs[datOTs$egos$sex %in% "M"], "agecat", rowprob = T), 3)
+agemixM <- agemixM[1:6,]
+amM <- melt(agemixM)
+amM$sex <- "M"
+
+am <-  rbind(amF, amM)
+
+am %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.2, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.015)) +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle=45)) +
+  coord_flip() +
+  labs(title = "Age Mixing - One-Times") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+## Race Mixing 
+```{r race-mixing-all, echo=FALSE, fig.align="center"}
+racemixF <- round(mixingmatrix(dat[dat$egos$sex %in% "F"], "race", rowprob = T), 3)
+rmF <- melt(racemixF)
+rmF$sex <- "F"
+
+racemixM <- round(mixingmatrix(dat[dat$egos$sex %in% "M"], "race", rowprob = T), 3)
+rmM <- melt(racemixM)
+rmM$sex <- "M"
+
+rm <-  rbind(rmF, rmM)
+
+rm %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="springgreen3", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.015)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing - All Active Rels") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+### Mar/Cohs
+```{r race-mixing-marcoh, echo=FALSE, fig.align="center"}
+racemixF <- round(mixingmatrix(datMarcoh[datMarcoh$egos$sex %in% "F"], "race", rowprob = T), 3)
+rmF <- melt(racemixF)
+rmF$sex <- "F"
+
+racemixM <- round(mixingmatrix(datMarcoh[datMarcoh$egos$sex %in% "M"], "race", rowprob = T), 3)
+rmM <- melt(racemixM)
+rmM$sex <- "M"
+
+rm <-  rbind(rmF, rmM)
+
+rm %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="springgreen3", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.015)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing - All Active Mar/Coh") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+### Other
+```{r race-mixing-other, echo=FALSE, fig.align="center"}
+racemixF <- round(mixingmatrix(datOther[datOther$egos$sex %in% "F"], "race", rowprob = T), 3)
+rmF <- melt(racemixF)
+rmF$sex <- "F"
+
+racemixM <- round(mixingmatrix(datOther[datOther$egos$sex %in% "M"], "race", rowprob = T), 3)
+rmM <- melt(racemixM)
+rmM$sex <- "M"
+
+rm <-  rbind(rmF, rmM)
+
+rm %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="springgreen3", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.015)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing - All Active Others") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+### One-Times 
+
+one-times based on Male egos reports of partner race if one-time partner was most recent 
+female one-times partner race based on male reports 
+
+```{r racemix-onetimes, echo=FALSE}
+racemixM <- round(mixingmatrix(datOTs[datOTs$egos$sex %in% "M"], "race", rowprob = T), 3)
+rmM <- melt(racemixM)
+rmM$sex <- "M"
+
+racemixMcounts<- mixingmatrix(datOTs[datOTs$egos$sex %in% "M"], "race")
+racemixFcounts <- t(racemixMcounts)
+racemixF <- round(racemixFcounts/rowSums(racemixFcounts),3) 
+rmF <- melt(racemixF)
+colnames(rmF) <- c("ego", "alter", "value")
+rmF$sex <- "F"
+
+rm <-  rbind(rmF, rmM)
+
+rm %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.2, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.015)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing - One-Times") +
+  facet_wrap(~sex, ncol = 2)
+```
+
+## New Partnerships in Last Year
+
+```{r new-partners, echo=FALSE}
+# what proportion of all reported partnerships were new this year? 
+prop <- nrow(dat$alters[which(dat$alters$dfs <= 12),])/nrow(dat$alters)
+```
+
+Of all active alters, `r round(prop,3)*100`% began within the last year. 
+
+```{r new-partners-byage, echo=FALSE}
+newParts <- function(dat, range){
+  egos<- dat$egos$ego[which(dat$egos$agecat %in% range)]
+  alters <- dat$alters[which(dat$alters$ego %in% egos),]
+  prop <- nrow(alters[alters$dfs <= 12,])/nrow(alters)
+  return(round(prop,3))
+}
+
+parts <- rbind(c("15-19","20-24","25-29", "30-34", "35-39", "40-44"),
+              c(newParts(dat, "15-19"), newParts(dat, "20-24"), newParts(dat, "25-29"), newParts(dat, "30-34"), newParts(dat, "35-39"), newParts(dat, "40-44")))
+rownames(parts) <- c("Ages", "Prop")
+kable(parts)
+```
+
+## One-Times
+
+(mean one-times in last year by sex, race, agecat- inactive one-time partners)
+```{r one-times, echo=FALSE}
+inst_race <- svy %>% 
+  filter(HADSEX==1) %>% 
+  group_by(sex, race) %>% 
+  summarize(mean = survey_mean(instyr)) %>% 
+  mutate(mean = round(mean, 4)) %>%
+  dcast(sex~race, value.var = "mean")
+
+inst_age <- svy %>% 
+  filter(HADSEX==1) %>%
+  group_by(sex, agecat) %>% 
+  summarize(mean = survey_mean(instyr)) %>% 
+  mutate(mean = round(mean, 4)) %>%
+  dcast(sex~agecat, value.var = "mean")
+
+kable(inst_race, caption = "By Sex & Ego Race") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position="left")
+```
+
+```{r inst-age, echo=FALSE}
+kable(inst_age, caption = "By Sex & Age Cat") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position="left")
+```

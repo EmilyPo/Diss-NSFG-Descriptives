@@ -31,25 +31,3 @@ This is to get a sense of the dataset before conducting further analysis. What d
 
 Unless otherwise specifed, NSFG survey weights are used. 
 
-
-Partnerships  
-
-_ active partnership types 
-
-__Descriptives for restricted pop (15-29):__  
-- proportion of partners within age range by age cat  
-- for those outside age range, what type of partnership?   
-
-__Cross-Sectional Network Descriptives - try out ergm ego__  
-- degree  
-- concurrency rate  
-- age mixing   
-- race mixing  
-
-__EpiModel vars__  
-- frequency of sex  
-- condom use  
-(by age cat, sex, race, partnership type?)   
-
-
-

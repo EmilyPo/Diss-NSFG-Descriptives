@@ -12,5 +12,9 @@ rmd_files: ["index.Rmd",
 "chapters/Demographics.Rmd",
 "chapters/Partnerships.Rmd",
 "chapters/ActivePartnerships.Rmd",
+"chapters/NetworkFactors.Rmd",
+"chapters/NetworkFactors-Young.Rmd",
+"chapters/EpiModelVars.Rmd", 
+"chapters/AlterRaceIssues.Rmd",
 "chapters/Summary.Rmd"
 ]

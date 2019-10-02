@@ -1,0 +1,156 @@
+# Behavior {#epi}
+
+__Behavior Among Those Sexually Active (in at least 1 active partnership)__
+
+```{r setup-epi-knitr, echo=FALSE}
+#suppressMessages(library(tidyverse))
+#suppressMessages(library(srvyr))
+#suppressMessages(library(kableExtra))
+#suppressMessages(library(reshape2))
+#suppressMessages(library(plotly))
+
+# full dataset (egos < 30)
+nsfg <- readRDS("~/NSFG_DATA/Full/nsfg_complete.rds")
+svy <- as_survey_design(nsfg, weights = weight, ids = ego)
+
+# long alters list 
+alters <- readRDS("~/NSFG_DATA/Objects/altersegos_survdat.rds")
+svy_alters <- as_survey_design(alters, weights = weight, ids = ego)
+
+```
+- sex freq
+- condom use
+(by age cat, sex, race, partnership type? degree?)   
+
+
+## Frequency of Sex In Last Week
+(for those inds in at least 1 partnership on the day of interview)
+("sex4wk" / 4)
+
+```{r sex-freq, echo=FALSE}
+sexF <- svy %>% 
+        filter(deg.main >=1, sex4wk <995, sex %in% "F") %>% 
+        mutate(sex1wk = sex4wk/4) %>%
+        group_by(agecat, race) %>%
+        summarize(mean = survey_mean(sex1wk)) %>%
+        mutate(mean = round(mean, 2)) %>%
+        dcast(agecat~race, value.var = "mean")
+sexM <- svy %>% 
+        filter(deg.main >=1, sex4wk <995, sex %in% "M") %>% 
+        mutate(sex1wk = sex4wk/4) %>%
+        group_by(agecat, race) %>%
+        summarize(mean = survey_mean(sex1wk)) %>%
+        mutate(mean = round(mean, 2)) %>%
+        dcast(agecat~race, value.var = "mean")
+
+kable(sexF, caption = "Females") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position="float_left")
+
+kable(sexM, caption = "Males") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position="right")
+
+```
+
+## Condom Use 
+### Probability of Condom Use in Last Week  
+("sex4wk" / "cond4wk")  
+
+```{r condoms, echo=FALSE}
+condF <- svy %>% 
+        filter(deg.main >=1, sex4wk <995, sex %in% "F") %>% 
+        group_by(agecat, race) %>%
+        summarize(mean = survey_mean(p.cond)) %>%
+        mutate(mean = round(mean, 2)) %>%
+        dcast(agecat ~ race, value.var = "mean")
+
+condM <- svy %>% 
+        filter(deg.main >=1, sex4wk <995, sex %in% "M") %>% 
+        group_by(agecat, race) %>%
+        summarize(mean = survey_mean(p.cond)) %>%
+        mutate(mean = round(mean, 2)) %>%
+        dcast(agecat ~ race, value.var = "mean")
+  
+
+kable(condF, format='html', caption = "Females") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position="float_left")
+
+kable(condM, format='html', caption = "Males") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position = "right")
+```
+
+
+### Condom use at last sex with partner - females only  
+
+```{r conds-last, echo=FALSE, fig.align="center"}
+ls1 <- svy_alters %>% filter(active ==1, e.sex %in% "F", optype <6, condls < 6) %>%
+        mutate(optype = factor(optype, labels = c("CurSpouse", "CurCohab","FmrSpouse", "FmrCohab", "Other"))) %>%
+        mutate(optype = as.factor(optype), condls = as.factor(condls)) %>%
+        group_by(optype, condls) %>%
+        summarize(n=survey_total()) %>% 
+        group_by(optype) %>%
+        mutate(prop = n/sum(n)) %>%
+        dcast(optype~condls, value.var = "prop") %>%
+        plot_ly(x=~optype, y=~`1`, type ='bar') %>%
+        layout(yaxis = list(title="% Used A Condom", range=c(0,0.6)), 
+               showlegend=FALSE)
+
+ls2 <- svy_alters %>% filter(active==1, e.sex %in% "F", optype <6, condls < 6) %>%
+        mutate(optype = as.factor(e.agecat), condls = as.factor(condls)) %>%
+        group_by(e.agecat, condls) %>%
+        summarize(n=survey_total()) %>% 
+        group_by(e.agecat) %>%
+        mutate(prop = n/sum(n)) %>%
+        dcast(e.agecat~condls, value.var = "prop") %>%
+        plot_ly(x=~e.agecat, y=~`1`, type ='bar') %>%
+        layout(yaxis = list(title="% Used A Condom", range=c(0,0.6)),
+               showlegend=FALSE)
+subplot(ls1,ls2, margin = 0.05)
+```
+
+
+### Condom use at first sex with partner
+#### By Sex & Partnership Type
+```{r conds-first, echo=FALSE, fig.align="center"}
+fs1 <- svy_alters %>% filter(active==1, e.sex %in% "F", optype <6, condfs <6) %>%
+          mutate(optype = factor(optype, labels = c("CurSpouse", "CurCohab","FmrSpouse", "FmrCohab", "Other"))) %>%
+        mutate(optype = as.factor(optype), condfs = as.factor(condfs)) %>%
+        group_by(optype, condfs) %>%
+        summarize(n=survey_total()) %>% 
+        group_by(optype) %>%
+        mutate(prop = n/sum(n)) %>%
+        dcast(optype~condfs, value.var = "prop") %>%
+        plot_ly(x=~optype, y=~`1`, type ='bar', name = "Female Egos", 
+                text= c("Cur. Spouse", "Cur. Cohab", "Former Spouse", "Former Cohab", "Other")) %>%
+        layout(yaxis = list(title="% Used A Condom", range=c(0,1)))
+
+fs2 <- svy_alters %>% filter(active==1, e.sex %in% "M", optype <6, condfs <6) %>%
+          mutate(optype = factor(optype, labels = c("CurSpouse", "CurCohab","FmrSpouse", "FmrCohab", "Other"))) %>%
+        mutate(optype = as.factor(optype), condfs = as.factor(condfs)) %>%
+        group_by(optype, condfs) %>%
+        summarize(n=survey_total()) %>% 
+        group_by(optype) %>%
+        mutate(prop = n/sum(n)) %>%
+        dcast(optype~condfs, value.var = "prop") %>%
+        plot_ly(x=~optype, y=~`1`, type ='bar', name = "Male Egos", 
+                text= c("Cur. Spouse", "Cur. Cohab", "Former Spouse", "Former Cohab", "Other")) %>%
+        layout(yaxis = list(title="% Used A Condom", range=c(0,1)))
+
+suppressWarnings(subplot(fs1,fs2, margin = 0.05))
+```
+
+
+#### All Egos By Partnership Type
+```{r condsfirst-all, echo=FALSE, fig.align="center"}
+svy_alters %>% filter(active==1, optype <6, condfs <6) %>%
+          mutate(optype = factor(optype, labels = c("CurSpouse", "CurCohab","FmrSpouse", "FmrCohab", "Other"))) %>%
+        mutate(optype = as.factor(optype), condfs = as.factor(condfs)) %>%
+        group_by(optype, condfs) %>%
+        summarize(n=survey_total()) %>% 
+        group_by(optype) %>%
+        mutate(prop = n/sum(n)) %>%
+        dcast(optype~condfs, value.var = "prop") %>%
+        plot_ly(x=~optype, y=~`1`, type ='bar', name = "Yes", 
+                text= c("Cur. Spouse", "Cur. Cohab", "Former Spouse", "Former Cohab", "Other")) %>%
+        layout(yaxis = list(title="% Used A Condom", range=c(0,1)), 
+               title="All Egos")
+```

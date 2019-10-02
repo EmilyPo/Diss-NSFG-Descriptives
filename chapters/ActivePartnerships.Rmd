@@ -5,49 +5,92 @@ long <- readRDS("~/NSFG_DATA/Objects/altersegos_active.rds")
 svy_long <- as_survey_design(long, weights = e.weight, ids = ego)
 ```
 
-## Rel Types
 
-### Overall
+## Overall
 ```{r rels-all-active, echo=FALSE}
-rels <- suppressWarnings(svy_long %>% group_by(optype) %>% summarize(n=survey_total()))
-rels$optype <- c("Cur. Spouse", "Cur. Cohab", "Former Spouse", "Former Cohab", "Other")
-
-rels %>% plot_ly(x=~optype, y=~n, type="bar") %>% 
+rels <- svy_long %>% 
+          group_by(reltype) %>% 
+          summarize(n=survey_total()) %>% 
+          plot_ly(x=~reltype, y=~n, type="bar") %>% 
           layout(title = "Active Relationships by Type",
                  xaxis = list(title="Rel Type"), 
                  yaxis = list(title="Count"))
+rels
 ```
 
 
-### By Age
+## By Age
 
 ```{r rels-age, echo=FALSE}
-rels_age <- suppressWarnings(svy_long %>% group_by(e.agecat, rel) %>% summarize(n=survey_total()))
-rels_age <- dcast(rels_age, e.agecat~rel, value.var = "n")
-
-rels_age %>% plot_ly(x=~e.agecat, y=~`1`, type="bar", name = "Curr/Fmr Spouse") %>%
-              add_trace(y=~`2`, type="bar", name = "Curr/Fmr Cohab") %>%
-              add_trace(y=~`3`, type= "bar", name = "Other") %>%
+rels_age <- svy_long %>% 
+              group_by(e.agecat, reltype) %>% 
+              summarize(n=survey_total()) %>%
+              dcast(e.agecat~reltype, value.var = "n") %>% 
+              plot_ly(x=~e.agecat, y=~`Cur/Fmr Cohab`, type="bar", name = "Curr/Fmr Cohab") %>%
+              add_trace(y=~`Cur/Fmr Spouse`, type="bar", name = "Curr/Fmr Spouse") %>%
+              add_trace(y=~Other, type= "bar", name = "Other") %>%
               layout(title = "Active Rel Types by Age Category", 
                      xaxis = list(title="Ego Age Category"),
                      yaxis = list(title="Count"))
+
+rels_age
 ```
 
-### By Race, Proportion
+## By Race, Proportion
 
 ```{r rels-race, echo=FALSE}
-rels_race <- suppressWarnings(svy_long %>% group_by(e.race, rel) %>% 
+rels_race <- svy_long %>% 
+              group_by(e.race, reltype) %>% 
               summarize(n=survey_total()) %>%
               group_by(e.race) %>%
-              mutate(prop = n/sum(n)))
-
-rels_race <- dcast(rels_race, e.race~rel, value.var = "prop")
-
-rels_race %>% plot_ly(x=~e.race, y=~`1`, type="bar", name = "Curr/Fmr Spouse") %>%
-              add_trace(y=~`2`, type="bar", name = "Curr/Fmr Cohab") %>%
-              add_trace(y=~`3`, type= "bar", name = "Other") %>%
+              mutate(prop = n/sum(n)) %>%
+              dcast(e.race~reltype, value.var = "prop") %>% 
+              plot_ly(x=~e.race, y=~`Cur/Fmr Cohab`, type="bar", name = "Curr/Fmr Cohab") %>%
+              add_trace(y=~`Cur/Fmr Spouse`, type="bar", name = "Curr/Fmr Spouse") %>%
+              add_trace(y=~Other, type= "bar", name = "Other") %>%
               layout(title = "Proportion Rel Types by Ego Race", 
                      xaxis = list(title="Ego Race"),
                      yaxis = list(title="Proportion"))
+rels_race
+```
+
+## Relationship Age  
+
+```{r rel-ages, echo=FALSE}
+
+ages <- svy_long %>%
+        group_by(e.agecat) %>%
+        summarize(age = survey_mean(edge_age_month))
+
+agesByRace <- svy_long %>%
+        group_by(e.race) %>%
+        summarize(age = survey_mean(edge_age_month))
+
+agesReltype<- svy_long %>%
+        group_by(reltype) %>%
+        summarize(age = survey_mean(edge_age_month))
+
+ages_full <- svy_long %>%
+            group_by(e.agecat, e.race, reltype) %>%
+            summarise(age = survey_mean(edge_age_month/12)) %>%
+            dcast(e.agecat+e.race~reltype, value.var = "age") 
+
+ages_full %>% plot_ly(x=~e.agecat, y=~`Cur/Fmr Cohab`, type="bar", name="Curr/Fmr Cohab") %>%
+              add_trace(y=~`Cur/Fmr Spouse`, type="bar", name = "Curr/Fmr Spouse") %>%
+              add_trace(y=~Other, type="bar", name = "Other") %>%
+              layout(title="Relationship Age, Years",
+                     yaxis=list(title="Years"),
+                     xaxis=list(title="Age Category"))
 
 ```
+
+
+```{r rel-age-race, echo=FALSE}
+ages_full %>% plot_ly(x=~e.race, y=~`Cur/Fmr Cohab`, type="bar", name="Curr/Fmr Cohab") %>%
+              add_trace(y=~`Cur/Fmr Spouse`, type="bar", name = "Curr/Fmr Spouse") %>%
+              add_trace(y=~Other, type="bar", name = "Other") %>%
+              layout(title="Relationship Age, Years",
+                     yaxis=list(title="Years"),
+                     xaxis=list(title="Age Category"))
+```
+

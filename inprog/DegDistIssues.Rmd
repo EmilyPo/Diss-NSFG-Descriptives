@@ -1,0 +1,276 @@
+---
+title: "DegreeDist"
+author: "Emily Pollock"
+date: "7/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+options("scipen" = 10)
+
+knitr::opts_chunk$set(echo = TRUE)
+library(ergm.ego)
+library(tidyverse)
+library(reshape2)
+library(srvyr)
+library(plotly)
+
+### import objects ###
+
+### make egodata object ###
+alters <- readRDS("~/NSFG_DATA/Objects/alters.rds")
+egos <- readRDS("~/NSFG_DATA/Objects/egos.rds")
+# make subsets to test  
+egosF <- egos %>% filter(sex %in% "F")
+egosH <- egos %>% filter(race %in% "h")
+
+dat <- egodata(egos=egos, alters=alters, egoIDcol = "ego")
+dat_F <- egodata(egos=egosF, alters=alters, egoIDcol = "ego")
+dat_H <- egodata(egos=egosH, alters=alters, egoIDcol = "ego")
+
+### wide data, weighted and unweighted ###
+nsfg <- readRDS("~/NSFG_DATA/Full/nsfg_complete.rds")
+```
+
+## Basic Problem 
+
+Degree Distribution by sex and other attributes is different when calculated using ergm.go or when using summary stats on "deg.main" in original wide data format. 
+
+ergm.ego uses a different data format which has two components:  
+1) alter list of all ACTIVE partners, the ego id they correspond to, and demographic info  
+2) ego list of ALL EGOS in dataset, ego id, and demographic and other descriptive vars  
+
+original data is formated with 1 row per ego and all alter / other info are column variables 
+
+### unweighted degree dist (prop & frequencies) from ergm.ego  
+```{r ergmego, echo=FALSE}
+deg <- degreedist(dat, by="sex", plot=F, freq = F); round(deg, 3)
+degFreq <- degreedist(dat, by="sex", plot=F, freq = T); degFreq
+```
+
+
+### unweighted degree dist from original data  
+("deg.main" = sum of active partnerships)
+```{r widedeg, echo=FALSE}
+deg_wide <- nsfg %>% 
+  group_by(sex, deg.main) %>% 
+  count() %>% 
+  group_by(sex) %>%
+  mutate(prop = n/sum(n)) %>%
+  mutate(prop = round(prop, 3))
+
+prop <- deg_wide %>%
+  dcast(sex~deg.main, value.var = "prop")
+
+freq <- deg_wide %>%
+  dcast(sex~deg.main, value.var = "n")
+prop; freq
+```
+
+## Basic Troubleshooting 
+
+### Pulling data from same number of egos? -- yes
+
+egodata:  
+```{r rowSums-datun}
+rowSums(degFreq)
+```
+
+original:
+```{r rowSums-nsfg}
+rowSums(freq[,2:5])
+```
+
+### Same number of active alters? -- yes 
+
+egodata: 
+```{r rows-alters}
+nrow(dat$alters)
+```
+
+original: 
+```{r sum-degmain}
+sum(nsfg$deg.main)
+```
+
+### Are the deg dists same if you don't stratify by sex? -- yes 
+
+egodata:
+```{r deg-all}
+degreedist(dat, plot=F, freq=T)
+```
+
+original:  
+```{r degdist-all}
+nsfg %>% count(deg.main)
+```
+
+### Checking that stratifying by other vars also produces different results - yes
+```{r deg-race}
+degreedist(dat, by="race", plot=F, freq=T)
+```
+
+original:  
+```{r degdist-racr}
+nsfg %>% group_by(race) %>% count(deg.main) %>% dcast(race~deg.main, value.var = "n")
+```
+neither method drops any obvervations, working with same # of egos/alters. 
+
+ALSO colSums are equal, so they agree how many deg0, deg1, etc exists, but they don't agree on say how many females are deg0
+
+what in the hell
+
+Something in the degreedist function apportions degree differently when stratifying by a variable than when grouping and summarizing over the deg.main variable. 
+
+## subset - females -- THIS WORKS 
+
+egodata:  
+```{r sub}
+degsub <- degreedist(dat_F, plot=F, freq=T); degsub
+degsubRace <- degreedist(dat_F, by="race", plot=F, freq=T); degsubRace
+```
+
+original:  
+```{r newdata}
+nsfg %>% filter(sex %in% "F") %>% count(deg.main)
+
+nsfg %>% filter(sex %in% "F") %>% group_by(race) %>% count(deg.main) %>% dcast(race~deg.main)
+```
+
+
+## subset - hispanics -- by sex doesn't work 
+```{r sub2}
+degreedist(dat_H, plot=F, freq = T)
+
+nsfg %>% filter(race %in% "h") %>% count(deg.main)
+
+degreedist(dat_H, by="sex", plot=F, freq=T)
+
+nsfg %>% filter(race %in% "h") %>% group_by(sex) %>% count(deg.main)
+```
+
+
+# degree dist by deg.main
+
+```{r degmain}
+degreedist(dat, by="deg.main", freq = T, plot=F)
+```
+
+```{r deg3}
+tb <- table(dat$alters[["ego"]])
+deg3 <- tb[which(tb==3)]
+egosTest <- as.numeric(names(deg3))
+
+ego <- nsfg %>% filter(ego %in% egosTest) 
+```
+
+```{r pavel-function, echo=FALSE}
+
+degreedist.egodata <- function(object, freq = FALSE, prob = !freq, 
+                               by = NULL, brgmod = FALSE, main = NULL, plot = TRUE, weight = TRUE, ...){
+  egodata <- object
+  if(!weight) egodata$egoWt[] <- 1
+  
+  color <- "#83B6E1"
+  beside <- TRUE
+  
+  ylabel <- if(prob) "Proportion" else "Frequency"
+  if(!is.null(by)) ylabel <- paste(ylabel, "(within attr level)")
+  
+  egoIDcol <- egodata$egoIDcol
+  
+  egodata$egos[[egoIDcol]] <- factor(egodata$egos[[egoIDcol]])
+  egodata$alters[[egoIDcol]] <- factor(egodata$alters[[egoIDcol]], levels=levels(egodata$egos[[egoIDcol]])) 
+  egodata$egos[[egoIDcol]] <- as.integer(egodata$egos[[egoIDcol]])
+  egodata$alters[[egoIDcol]] <- as.integer(egodata$alters[[egoIDcol]])
+  
+  degtable <- rep(0, nrow(egodata$egos))
+  degtable[as.numeric(names(table(egodata$alters[egoIDcol])))] <- table(egodata$alters[egoIDcol])
+  
+  if(is.null(by)){
+    deg.ego <- xtabs(egodata$egoWt~degtable)
+    names(dimnames(deg.ego)) <- "degree"
+    degrees <- as.integer(names(deg.ego))
+  }else{
+    deg.ego <- xtabs(egodata$egoWt~egodata$egos[[by]]+degtable)
+    names(dimnames(deg.ego)) <- c(by, "degree")
+    levs <- rownames(deg.ego)
+    degrees <- as.integer(colnames(deg.ego))
+    ncolors <- dim(deg.ego)[1]
+    if(ncolors == 2){
+      color <- c("#eff3ff", "#377FBC")
+    } else if(ncolors < 10){
+      color <- RColorBrewer::brewer.pal(ncolors,"Blues")
+    } else if(ncolors >= 10){
+      color <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9,"Blues"))(ncolors)
+    }
+    
+    ltext <- levs
+    lfill <- c(color, 0)
+    ltitle <- by
+    maxfreq <- max(colSums(deg.ego))
+  }
+  if(prob){
+    if(is.null(by)){
+      scaledeg <- sum(deg.ego)
+      deg.ego <- deg.ego/scaledeg
+      maxfreq <- max(deg.ego, na.rm = TRUE)
+    } else {
+      scaledeg <- rowSums(deg.ego)
+      deg.ego <- deg.ego/scaledeg
+      deg.ego <- deg.ego
+      maxfreq <- max(max(deg.ego, na.rm = TRUE))
+      beside <- TRUE
+    }
+  }
+  
+  if(plot){
+    if(brgmod) {
+      ppopsize.mul <- max(egodata$egoWt)/min(egodata$egoWt)
+      brgdraws <- simulate(suppressMessages(ergm.ego(egodata ~ edges, control=control.ergm.ego(ppopsize=nrow(egodata$egos)*ppopsize.mul))), nsim = 50, ...)
+      deg.brg <- summary(brgdraws ~ degree(degrees))/ppopsize.mul
+      brgmeans <- apply(deg.brg, MARGIN = 2, FUN = mean)
+      brgsd <- apply(deg.brg, MARGIN = 2, FUN = sd)
+      upper <- brgmeans + 2 * brgsd
+      lower <- brgmeans - 2 * brgsd
+      
+      if(prob){
+        if(is.null(by)){
+          brgmeans <- brgmeans/scaledeg
+          upper <- upper/scaledeg
+          lower <- lower/scaledeg
+        } else {
+          upper <- upper/sum(brgmeans)
+          lower <- lower/sum(brgmeans)
+          brgmeans <- brgmeans/sum(brgmeans)
+        }
+        
+      }
+      maxfreq <- max(maxfreq, upper, na.rm = TRUE)
+    }
+    
+    baraxis <- barplot(deg.ego, xlab = "Degree", ylab = ylabel,
+                       col = color, beside = beside, plot = TRUE,
+                       ylim = c(0, maxfreq), main = main)
+    
+    if(brgmod){
+      baraxis <- if(is.null(by)){
+        baraxis - 0.15
+      } else {
+        colMeans(baraxis)
+      }
+      points(x = baraxis, y = brgmeans, col = "firebrick",
+             lwd = 1, pch = 18, cex = 1.25)
+      suppressWarnings(arrows(x0 = baraxis, y0 = upper,
+                              x1 = baraxis, y1 = lower,
+                              code = 3, length = 0.1, 
+                              angle = 90, col = "firebrick"))
+    } 
+    if(!is.null(by)){
+      legend(x="top", legend = ltext, title = ltitle, fill = lfill, bg="white")
+    }
+  }
+  
+  if(plot) invisible(deg.ego) else deg.ego
+}
+```

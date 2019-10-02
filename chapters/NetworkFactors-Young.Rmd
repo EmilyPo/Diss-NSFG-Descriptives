@@ -1,0 +1,533 @@
+# Network Factors - 15-29 {#net-young}
+
+
+```{r ego-prep-young, echo=FALSE, message=FALSE}
+library(ergm.ego)
+library(tidyverse)
+library(reshape2)
+library(srvyr)
+library(plotly)
+library(kableExtra)
+
+# import objects
+alters <- readRDS("~/NSFG_DATA/Objects/alters_all_for_young_egos.rds")
+alters_young <- readRDS("~/NSFG_DATA/Objects/alters_young_for_young_egos.rds")
+egos <- readRDS("~/NSFG_DATA/Objects/egos_young.rds")
+
+# make ego data objects
+## egos < 30 and alters any age
+dat <- egodata(egos=egos, alters=alters, egoWt = egos$weight, egoIDcol = "ego")
+## egos < 30 and alters < 30
+dat2 <- egodata(egos=egos, alters=alters_young, egoWt = egos$weight, egoIDcol = "ego")
+
+# full dataset (egos < 30)
+nsfg <- readRDS("~/NSFG_DATA/Objects/nsfg_young_egos.rds")
+svy <- as_survey_design(nsfg, weights = weight, ids = ego)
+```
+
+__Mean Degree of egos < 30: `r round(nrow(dat$alters)/nrow(dat$egos), 3)`__  
+__Mean Degree of egos & alters < 30: `r round(nrow(dat2$alters)/nrow(dat$egos), 3)`__
+
+
+## Degree
+
+### Histograms
+#### All Alters Vs Alters < 30
+```{r degdist-young, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+
+degreedist(dat); degreedist(dat2)
+
+degreedist(dat, by="sex"); degreedist(dat2, by="sex")
+
+degreedist(dat, by="race"); degreedist(dat2, by="race")
+
+degreedist(dat, by="agecat"); degreedist(dat2, by="agecat")
+```
+
+### Bubble Plots  
+##### egos < 30,  all corresponding alters 
+```{r deg-bubble-young, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+# excluding the n=14 respondents who report 2 or 3 active married/cohab partners
+
+bubF <- svy %>%
+          filter(sex %in% "F", deg.cohab < 2) %>%
+          mutate(deg.cohab = as.factor(deg.cohab), deg.pers = as.factor(deg.pers)) %>%
+          group_by(deg.cohab, deg.pers, .drop = FALSE) %>%
+          summarize(n = survey_total()) %>% 
+          mutate(prop = n/sum(n)) %>%
+          select(-n, -n_se)
+
+bubF <- suppressMessages(melt(bubF))
+
+bubM <- svy %>%
+          filter(sex %in% "M", deg.cohab < 2) %>%
+          mutate(deg.cohab = as.factor(deg.cohab), deg.pers = as.factor(deg.pers)) %>%
+          group_by(deg.cohab, deg.pers, .drop = FALSE) %>%
+          summarize(n = survey_total()) %>% 
+          mutate(prop = n/sum(n)) %>%
+          select(-n, -n_se)
+
+bubM <- suppressMessages(melt(bubM))
+
+My_Theme = theme(
+  axis.title = element_text(size = 16),
+  axis.text = element_text(size=16),
+  title = element_text(size=16))
+
+bubFplot <- ggplot(bubF, aes(deg.pers, deg.cohab)) +
+              geom_point(color="green", alpha=0.3, aes(size=value)) +
+              scale_size_area(max_size = 30) +
+              geom_text(aes(label=round(value,3), size=0.04)) +
+              theme(legend.position="none") + 
+              labs(title="Females") +
+              My_Theme
+
+bubMplot <- ggplot(bubM, aes(deg.pers, deg.cohab)) +
+              geom_point(color="green", alpha=0.3, aes(size=value)) +
+              scale_size_area(max_size = 30) +
+              geom_text(aes(label=round(value,3), size=0.04)) +
+              theme(legend.position="none") + 
+              labs(title="Males") +
+              My_Theme
+
+#grid.arrange(bubFplot, bubMplot, ncol=2)
+bubFplot 
+
+bubMplot
+```
+
+##### egos & alters < 30
+```{r deg-bubble-young2, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+# excluding the n=14 respondents who report 2 or 3 active married/cohab partners
+
+bubF <- svy %>%
+          filter(sex %in% "F", deg.cohab < 2) %>%
+          mutate(deg.cohab = as.factor(deg.cohab.y), deg.pers = as.factor(deg.pers.y)) %>%
+          group_by(deg.cohab, deg.pers, .drop = FALSE) %>%
+          summarize(n = survey_total()) %>% 
+          mutate(prop = n/sum(n)) %>%
+          select(-n, -n_se)
+
+bubF <- suppressMessages(melt(bubF))
+
+bubM <- svy %>%
+          filter(sex %in% "M", deg.cohab < 2) %>%
+          mutate(deg.cohab = as.factor(deg.cohab.y), deg.pers = as.factor(deg.pers.y)) %>%
+          group_by(deg.cohab, deg.pers, .drop = FALSE) %>%
+          summarize(n = survey_total()) %>% 
+          mutate(prop = n/sum(n)) %>%
+          select(-n, -n_se)
+
+bubM <- suppressMessages(melt(bubM))
+
+My_Theme = theme(
+  axis.title = element_text(size = 16),
+  axis.text = element_text(size=16),
+  title = element_text(size=16))
+
+bubFplot <- ggplot(bubF, aes(deg.pers, deg.cohab)) +
+              geom_point(color="green", alpha=0.3, aes(size=value)) +
+              scale_size_area(max_size = 30) +
+              geom_text(aes(label=round(value,3), size=0.04)) +
+              theme(legend.position="none") + 
+              labs(title="Females") +
+              My_Theme
+
+bubMplot <- ggplot(bubM, aes(deg.pers, deg.cohab)) +
+              geom_point(color="green", alpha=0.3, aes(size=value)) +
+              scale_size_area(max_size = 30) +
+              geom_text(aes(label=round(value,3), size=0.04)) +
+              theme(legend.position="none") + 
+              labs(title="Males") +
+              My_Theme
+
+#grid.arrange(bubFplot, bubMplot, ncol=2)
+bubFplot 
+
+bubMplot
+```
+
+
+## Age Mixing  
+
+### Overall  
+```{r age-mixing-young, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+
+agemix <- round(mixingmatrix(dat, "agecat", rowprob = T), 3)
+am <- melt(agemix[c(2:4),])
+
+am %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing") 
+
+agemix2 <- round(mixingmatrix(dat2, "agecat", rowprob = T), 3)
+am2 <- melt(agemix2)
+
+am2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing (all under 30)") +
+  My_Theme
+```
+
+### By Sex  
+
+```{r age-mixing-young-sex, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+
+agemixF <- round(mixingmatrix(dat[which(dat$egos$sex %in% "F")], "agecat", rowprob = T), 3)
+amF <- melt(agemixF[c(2:4),])
+
+amF %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Females under 30")
+
+agemixF2 <- round(mixingmatrix(dat2[which(dat2$egos$sex %in% "F")], "agecat", rowprob = T), 3)
+amF2 <- melt(agemixF2) 
+
+amF2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Females & Alters under 30") +
+  My_Theme
+
+agemixM <- round(mixingmatrix(dat[which(dat$egos$sex %in% "M")], "agecat", rowprob = T), 3)
+amM <- melt(agemixM[c(2:4),])
+
+amM %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Males under 30")
+
+agemixM2 <- round(mixingmatrix(dat2[which(dat2$egos$sex %in% "M")], "agecat", rowprob = T), 3)
+am2 <- melt(agemixM2)
+
+am2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Males & Alters under 30") +
+  My_Theme
+```
+
+
+### By Race  
+
+```{r age-mixing-young-race, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+### Blacks 
+agemixB <- round(mixingmatrix(dat[which(dat$egos$race %in% "b")], "agecat", rowprob = T), 3)
+amB <- melt(agemixB[c(2:4),])
+
+amB %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Blacks under 30")
+
+agemixB2 <- round(mixingmatrix(dat2[which(dat$egos$race %in% "b")], "agecat", rowprob = T), 3)
+amB2 <- melt(agemixB2) 
+
+amB2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Blacks & Alters under 30") +
+  My_Theme
+
+### Hispanics
+agemixH <- round(mixingmatrix(dat[which(dat$egos$race %in% "h")], "agecat", rowprob = T), 3)
+amH <- melt(agemixH[c(2:4),])
+
+amH %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Hispanics under 30")
+
+agemixH2 <- round(mixingmatrix(dat2[which(dat$egos$race %in% "h")], "agecat", rowprob = T), 3)
+amH2 <- melt(agemixH2)
+
+amH2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Males & Alters under 30") +
+  My_Theme
+
+## Others
+agemixO <- round(mixingmatrix(dat[which(dat$egos$race %in% "o")], "agecat", rowprob = T), 3)
+amO <- melt(agemixO[c(2:4),])
+
+amO %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Others under 30")
+
+agemixO2 <- round(mixingmatrix(dat2[which(dat$egos$race %in% "o")], "agecat", rowprob = T), 3)
+amO2 <- melt(agemixO2)
+
+amO2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Others & Alters under 30") +
+  My_Theme
+
+## Whites 
+agemixW <- round(mixingmatrix(dat[which(dat$egos$race %in% "w")], "agecat", rowprob = T), 3)
+amW <- melt(agemixW[c(2:4),])
+
+amW %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Whites under 30")
+
+agemixW2 <- round(mixingmatrix(dat2[which(dat$egos$race %in% "w")], "agecat", rowprob = T), 3)
+amW2 <- melt(agemixW2)
+
+amW2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="blue", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Age Mixing, Whites & Alters under 30") +
+  My_Theme
+```
+
+   
+   
+   
+## Race Mixing 
+### Overall  
+```{r race-mixing-young, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+racemix <- round(mixingmatrix(dat, "race", rowprob = T), 3)
+racemix <- racemix[c(1,2,5,6), c(1,2,5,6)]
+rm <- melt(racemix) 
+
+rm %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing (many `other` partners missing race, excluded)") 
+
+racemix2 <- round(mixingmatrix(dat2, "race", rowprob = T), 3)
+racemix2 <- racemix2[c(1,2,5,6), c(1,2,5,6)]
+rm2 <- melt(racemix2) 
+
+rm2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing (all under 30)") +
+  My_Theme
+```
+
+### By Sex  
+
+```{r race-mixing-young-2, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+racemixF <- round(mixingmatrix(dat[which(dat$egos$sex %in% "F")], "race", rowprob = T), 3)
+racemixF <- racemixF[c(1,2,5,6), c(1,2,5,6)]
+rmF <- melt(racemixF) 
+
+rmF %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Female Egos < 30") +
+  My_Theme
+
+racemixF2 <- round(mixingmatrix(dat2[which(dat2$egos$sex %in% "F")], "race", rowprob = T), 3)
+racemixF2 <- racemixF2[c(1,2,5,6), c(1,2,5,6)]
+rmF2 <- melt(racemixF2) 
+
+rmF2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Female Egos & Alters < 30") +
+  My_Theme
+
+
+racemixM <- round(mixingmatrix(dat[which(dat$egos$sex %in% "M")], "race", rowprob = T), 3)
+racemixM <- racemixM[c(1,2,4,5), c(1,2,4,5)]
+rmM <- melt(racemixM) 
+
+rmM %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Males Egos < 30") +
+  My_Theme
+
+
+racemixM2 <- round(mixingmatrix(dat2[which(dat2$egos$sex %in% "M")], "race", rowprob = T), 3)
+racemixM2 <- racemixM2[c(1,2,4,5), c(1,2,4,5)]
+rmM2 <- melt(racemixM2) 
+
+rm2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Males Egos & Alters < 30") +
+  My_Theme
+```
+
+### By AgeCat
+```{r race-mixing-young-3, echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
+### Egos 15-19
+racemix15 <- round(mixingmatrix(dat[which(dat$egos$agecat %in% "15-19")], "race", rowprob = T), 3)
+racemix15 <- racemix15[c(1,2,5,6), c(1,2,5,6)]
+rm15 <- melt(racemix15) 
+
+rm15 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Egos 15-19") +
+  My_Theme
+
+racemix15.2 <- round(mixingmatrix(dat2[which(dat2$egos$agecat %in% "15-19")], "race", rowprob = T), 3)
+racemix15.2 <- racemix15.2[c(1,2,5,6), c(1,2,5,6)]
+rm15.2<- melt(racemix15.2) 
+
+rm15.2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Egos 15-19 & Alters < 30") +
+  My_Theme
+
+#### Egos 20-24
+racemix20 <- round(mixingmatrix(dat[which(dat$egos$agecat %in% "20-24")], "race", rowprob = T), 3)
+racemix20 <- racemix20[c(1,2,5,6), c(1,2,5,6)]
+rm20 <- melt(racemix20) 
+
+rm20 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Egos 20-24") +
+  My_Theme
+
+racemix20.2 <- round(mixingmatrix(dat2[which(dat2$egos$agecat %in% "20-24")], "race", rowprob = T), 3)
+racemix20.2 <- racemix20.2[c(1,2,5,6), c(1,2,5,6)]
+rm20.2<- melt(racemix20.2) 
+
+rm20.2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Egos 15-19 & Alters < 30") +
+  My_Theme
+
+### 25-29
+racemix25 <- round(mixingmatrix(dat[which(dat$egos$agecat %in% "25-29")], "race", rowprob = T), 3)
+racemix25 <- racemix25[c(1,2,4,5), c(1,2,4,5)]
+rm25 <- melt(racemix25) 
+
+rm25 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Egos 25-29") +
+  My_Theme
+
+racemix25.2 <- round(mixingmatrix(dat2[which(dat2$egos$agecat %in% "25-29")], "race", rowprob = T), 3)
+racemix25.2 <- racemix25.2[c(1,2,4,5), c(1,2,4,5)]
+rm25.2<- melt(racemix25.2) 
+
+rm25.2 %>% ggplot(aes(ego, alter)) + 
+  geom_point(color="indianred", alpha=0.3, aes(size=value)) +
+  scale_size_area(max_size = 30) +
+  geom_text(aes(label=round(value,2), size=0.03)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  labs(title = "Race Mixing, Egos 20-24 & Alters < 30") +
+  My_Theme
+
+```
+
+### One-Times (all alters)
+(mean one-times in last year by sex, race, agecat- inactive one-time partners)
+```{r one-times, echo=FALSE}
+inst_race <- svy %>% 
+  filter(HADSEX==1) %>% 
+  group_by(sex, race) %>% 
+  summarize(mean = survey_mean(instyr)) %>% 
+  mutate(mean = round(mean, 4)) %>%
+  dcast(sex~race, value.var = "mean")
+
+inst_age <- svy %>% 
+  filter(HADSEX==1) %>% 
+  group_by(sex, agecat) %>% 
+  summarize(mean = survey_mean(instyr)) %>% 
+  mutate(mean = round(mean, 4)) %>%
+  dcast(sex~agecat, value.var = "mean")
+
+kable(inst_race, caption = "By Sex & Ego Race") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position="left")
+```
+
+
+
+```{r inst-age, echo=FALSE}
+kable(inst_age, caption = "By Sex & Age Cat") %>% 
+  kable_styling(full_width = F, bootstrap_options = "striped", position="left")
+```

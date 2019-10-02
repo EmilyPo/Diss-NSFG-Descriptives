@@ -2,7 +2,7 @@
 
 ```{r full-data, echo=FALSE}
 nsfg <- readRDS("~/NSFG_DATA/Full/nsfg_complete.rds")
-svy <- as_survey_design(nsfg, weights = weight, ids = CASEID)
+svy <- as_survey_design(nsfg, weights = weight, ids = ego)
 ```
 
 The combined datasets from 2006-2015 include data from `r nsfg %>% count()` respondents. 

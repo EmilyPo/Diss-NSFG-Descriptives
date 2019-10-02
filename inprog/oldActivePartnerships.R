@@ -105,4 +105,18 @@ durs %>% plot_ly(x=~reltype, y=~first, type="bar", name = "1st most recent") %>%
   layout(xaxis=list(title="Active Relationship Types"),
          yaxis=list(title=""))
 ```
+# degree
+deg <- svy %>% 
+  mutate(deg.cap = ifelse(deg.main > 2, 2, deg.main)) %>%
+  group_by(sex, race, deg.cap) %>% 
+  summarize(prop = survey_mean()) %>% 
+  select(-prop_se) 
 
+p <- ggplot(deg, aes(x=deg.cap, y=race)) + 
+  geom_point(color="green", alpha=0.3, aes(size=prop)) +
+  geom_text(aes(label=round(prop,3))) +
+  scale_size_area(max_size = 20) +
+  theme(legend.position="none") + 
+  labs(title = "Cross-Sectional Degree, 2 = 2+ partners")
+
+p + facet_grid(cols=vars(sex))
